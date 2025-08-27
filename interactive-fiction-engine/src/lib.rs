@@ -1,6 +1,19 @@
 use std::fmt::Display;
 
+use console::Term;
 use dialoguer::Select;
+
+pub fn start() {
+    let term = Term::stdout();
+    term.clear_screen().unwrap();
+}
+
+pub fn wait() {
+    let term = Term::stdout();
+
+    // Wait for a single key press
+    term.read_key().unwrap();
+}
 
 pub fn show<T: Display>(v: T) {
     print!("{}", v)

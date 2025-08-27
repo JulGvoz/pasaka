@@ -77,6 +77,7 @@ dependencies = [
 name = "interactive-fiction-engine"
 version = "0.1.0"
 dependencies = [
+ "console",
  "dialoguer",
  "fastrand",
 ]

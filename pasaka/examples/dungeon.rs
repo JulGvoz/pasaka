@@ -1,4 +1,4 @@
-use pasaka::engine::Engine;
+use pasaka::{engine::Engine, runner::cli::CliRunner};
 
 use crate::game::{GameState, caverns};
 
@@ -9,6 +9,7 @@ fn main() {
             gold: 0,
             monster: true,
         },
+        CliRunner,
     );
 }
 

@@ -70,7 +70,7 @@ impl ChoiceHandle {
 }
 
 pub struct ChoiceResult {
-    pub(crate) next_passage: Box<dyn FnOnce() -> Choice>,
+    pub next_passage: Box<dyn FnOnce() -> Choice>,
 }
 
 pub type Passage<S> = fn(S) -> Choice;

@@ -1,9 +1,9 @@
 use std::cell::RefCell;
 
-use console::Term;
-use dialoguer::Select;
-
-use crate::choice::{Choice, ChoiceBuilder, ChoiceHandle, Passage};
+use crate::{
+    choice::{Choice, ChoiceBuilder, Passage},
+    runner::Runner,
+};
 
 thread_local! {
     static TEXT_BUF: RefCell<Vec<String>> = RefCell::new(Vec::new());
@@ -32,32 +32,9 @@ impl Engine {
         }
     }
 
-    pub fn run<S>(passage: Passage<S>, state: S) {
-        let mut current: Box<dyn FnOnce() -> Choice> = Box::new(move || passage(state));
+    pub fn run<S: 'static>(passage: Passage<S>, state: S, mut runner: impl Runner) {
+        let current: Box<dyn FnOnce() -> Choice> = Box::new(move || passage(state));
 
-        loop {
-            Term::stdout().clear_screen().unwrap();
-
-            let choice = current();
-
-            for line in &choice.text {
-                println!("{line}");
-            }
-            println!();
-
-            if choice.labels.is_empty() {
-                break;
-            }
-
-            let index = Select::new()
-                .default(0)
-                .items(choice.labels)
-                .interact()
-                .unwrap();
-
-            let handle = ChoiceHandle { _private: () };
-            let result = (choice.action)(index, handle);
-            current = result.next_passage;
-        }
+        runner.run_loop(current);
     }
 }

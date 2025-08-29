@@ -1,6 +1,8 @@
 pub mod engine {
     use std::cell::RefCell;
 
+    use dialoguer::Select;
+
     thread_local! {
         static TEXT_BUF: RefCell<Vec<String>> = RefCell::new(Vec::new());
     }
@@ -29,7 +31,30 @@ pub mod engine {
         }
 
         pub fn run<S>(passage: Passage<S>, state: S) {
-            todo!()
+            let mut current: Box<dyn FnOnce() -> Choice> = Box::new(move || passage(state));
+
+            loop {
+                let choice = current();
+
+                for line in &choice.text {
+                    println!("{line}");
+                }
+                println!();
+
+                if choice.labels.is_empty() {
+                    break;
+                }
+
+                let index = Select::new()
+                    .default(0)
+                    .items(choice.labels)
+                    .interact()
+                    .unwrap();
+
+                let handle = ChoiceHandle { _private: () };
+                let result = (choice.action)(index, handle);
+                current = result.next_passage;
+            }
         }
     }
 

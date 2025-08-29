@@ -4,6 +4,10 @@ use console::Term;
 use dialoguer::Select;
 
 mod experiment1;
+mod experiment2;
+mod experiment3;
+mod experiment4;
+mod experiment5;
 
 pub fn start() {
     let term = Term::stdout();

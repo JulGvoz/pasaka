@@ -3,6 +3,8 @@ use std::fmt::Display;
 use console::Term;
 use dialoguer::Select;
 
+mod experiment1;
+
 pub fn start() {
     let term = Term::stdout();
     term.clear_screen().unwrap();

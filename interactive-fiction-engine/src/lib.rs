@@ -3,11 +3,11 @@ use std::fmt::Display;
 use console::Term;
 use dialoguer::Select;
 
-mod experiment1;
-mod experiment2;
-mod experiment3;
-mod experiment4;
-mod experiment5;
+pub mod experiment1;
+pub mod experiment2;
+pub mod experiment3;
+pub mod experiment4;
+pub mod experiment5;
 
 pub fn start() {
     let term = Term::stdout();

@@ -7,10 +7,36 @@ pub mod engine {
         pub fn text(s: impl ToString) {
             todo!()
         }
+
+        pub fn choice() -> ChoiceBuilder {
+            ChoiceBuilder { _private: () }
+        }
+
+        pub fn start<S>(passage: Passage<S>, state: S) {
+            todo!()
+        }
     }
 
     pub struct Choice {
         _private: (),
+    }
+
+    pub struct ChoiceBuilder {
+        _private: (),
+    }
+
+    impl ChoiceBuilder {
+        pub fn option(
+            self,
+            label: impl ToString,
+            f: impl FnOnce(ChoiceHandle) -> ChoiceResult,
+        ) -> Self {
+            self
+        }
+
+        pub fn build(self) -> Choice {
+            Choice { _private: () }
+        }
     }
 
     pub struct ChoiceHandle {
@@ -25,14 +51,6 @@ pub mod engine {
 
     pub struct ChoiceResult {
         _private: (),
-    }
-
-    impl Choice {
-        pub fn new(f: impl FnOnce(ChoiceHandle, &str) -> ChoiceResult) -> Choice {
-            let handle = ChoiceHandle { _private: () };
-            let result = f(handle, "example input");
-            Choice { _private: () }
-        }
     }
 
     pub type Passage<S> = fn(&mut S) -> Choice;
@@ -72,9 +90,8 @@ mod combat {
         let damage = fastrand::i32(0..=5);
         Engine::text(format!("It is attacking for {damage} damage!"));
 
-        Choice::new(|h, s| match s {
-            "Attack it" => {
-                state.enemy_hp -= 10;
+        Engine::choice()
+            .option("Attack it", |h| {
                 if state.enemy_hp <= 0 {
                     h.passage(state.win_passage, state.win_state)
                 } else {
@@ -85,14 +102,23 @@ mod combat {
                         h.passage(combat, state)
                     }
                 }
-            }
-            "Defend against its attack" => todo!(),
-            _ => unreachable!(),
-        })
+            })
+            .option("Defend against its attack", |h| {
+                let damage = damage / 2;
+                state.player_hp -= damage;
+                if state.player_hp <= 0 {
+                    h.passage(death, &mut ())
+                } else {
+                    h.passage(combat, state)
+                }
+            })
+            .build()
     }
 
     fn death(state: &mut ()) -> Choice {
-        todo!()
+        Engine::text("You died fighting against the monster...");
+
+        Engine::choice().build()
     }
 }
 
@@ -111,17 +137,16 @@ mod game {
         if state.monster {
             Engine::text("You see a path forwards, but it blocked by a monster");
 
-            Choice::new(|h, s| match s {
-                "Engage the monster" => {
+            Engine::choice()
+                .option("Engage the monster", |h| {
                     let mut combat_state = CombatState::new(20, 100, path, state);
 
                     h.passage(combat, &mut combat_state)
-                }
-                "Explore more" => h.passage(caverns, state),
-                _ => unreachable!(),
-            })
+                })
+                .option("Explore more", |h| h.passage(caverns, state))
+                .build()
         } else {
-            todo!()
+            todo!("irrelevant for now")
         }
     }
 
@@ -131,6 +156,17 @@ mod game {
         Engine::text("You have found some treasure!");
         Engine::text(format!("You now have {} gold.", state.gold));
 
-        todo!()
+        Engine::choice().build()
+    }
+
+    #[allow(unused)]
+    fn main() {
+        Engine::start(
+            caverns,
+            GameState {
+                gold: 0,
+                monster: true,
+            },
+        );
     }
 }

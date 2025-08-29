@@ -95,7 +95,12 @@ mod game {
 
                     h.passage(combat, combat_state)
                 })
-                .option("Explore more", |state, h| h.passage(caverns, state))
+                .option("Explore more", |state, h| {
+                    Engine::text(
+                        "You explore the dungeon more, but don't find anything interesting.",
+                    );
+                    h.passage(caverns, state)
+                })
                 .build()
         } else {
             todo!("irrelevant for now")

@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 
+use console::Term;
 use dialoguer::Select;
 
 thread_local! {
@@ -33,6 +34,8 @@ impl Engine {
         let mut current: Box<dyn FnOnce() -> Choice> = Box::new(move || passage(state));
 
         loop {
+            Term::stdout().clear_screen().unwrap();
+
             let choice = current();
 
             for line in &choice.text {

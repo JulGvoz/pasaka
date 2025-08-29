@@ -123,7 +123,7 @@ mod combat {
 }
 
 mod game {
-    use crate::experiment5::combat::*;
+    use super::combat::*;
 
     use super::engine::*;
 

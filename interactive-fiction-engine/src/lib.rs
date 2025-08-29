@@ -8,6 +8,7 @@ pub mod experiment2;
 pub mod experiment3;
 pub mod experiment4;
 pub mod experiment5;
+pub mod experiment6;
 
 pub fn start() {
     let term = Term::stdout();

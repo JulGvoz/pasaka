@@ -1,4 +1,4 @@
-use interactive_fiction_engine::engine::Engine;
+use pasaka::engine::Engine;
 
 use crate::game::{GameState, caverns};
 
@@ -13,7 +13,7 @@ fn main() {
 }
 
 mod combat {
-    use interactive_fiction_engine::engine::*;
+    use pasaka::engine::*;
 
     pub struct CombatState<S: 'static> {
         player_hp: i32,
@@ -77,7 +77,7 @@ mod combat {
 mod game {
     use super::combat::*;
 
-    use interactive_fiction_engine::engine::*;
+    use pasaka::engine::*;
 
     pub struct GameState {
         pub gold: i32,

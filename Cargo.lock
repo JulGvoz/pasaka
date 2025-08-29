@@ -74,15 +74,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "interactive-fiction-engine"
-version = "0.1.0"
-dependencies = [
- "console",
- "dialoguer",
- "fastrand",
-]
-
-[[package]]
 name = "libc"
 version = "0.2.175"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -99,6 +90,15 @@ name = "once_cell"
 version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
+
+[[package]]
+name = "pasaka"
+version = "0.1.0"
+dependencies = [
+ "console",
+ "dialoguer",
+ "fastrand",
+]
 
 [[package]]
 name = "r-efi"

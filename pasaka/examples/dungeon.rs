@@ -13,7 +13,7 @@ fn main() {
 }
 
 mod combat {
-    use pasaka::engine::*;
+    use pasaka::{choice::*, engine::*};
 
     pub struct CombatState<S: 'static> {
         player_hp: i32,
@@ -77,7 +77,7 @@ mod combat {
 mod game {
     use super::combat::*;
 
-    use pasaka::engine::*;
+    use pasaka::{choice::*, engine::*};
 
     pub struct GameState {
         pub gold: i32,

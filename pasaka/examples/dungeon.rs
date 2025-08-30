@@ -42,7 +42,7 @@ mod combat {
         let damage = fastrand::i32(0..=5);
         Engine::text(format!("It is attacking for {damage} damage!"));
 
-        Engine::choice(state)
+        Engine::choice::<CombatState<S>>()
             .option("Attack it", move |mut state, h| {
                 state.enemy_hp -= 10;
                 if state.enemy_hp <= 0 {
@@ -65,13 +65,13 @@ mod combat {
                     h.passage(combat, state)
                 }
             })
-            .build()
+            .build(state)
     }
 
     fn death(_: ()) -> Choice {
         Engine::text("You died fighting against the monster...");
 
-        Engine::choice(()).build()
+        Engine::choice().build(())
     }
 }
 
@@ -90,7 +90,7 @@ mod game {
         if state.monster {
             Engine::text("You see a path forwards, but it blocked by a monster");
 
-            Engine::choice(state)
+            Engine::choice()
                 .option("Engage the monster", |state, h| {
                     let combat_state = CombatState::new(20, 100, path, state);
 
@@ -102,7 +102,7 @@ mod game {
                     );
                     h.passage(caverns, state)
                 })
-                .build()
+                .build(state)
         } else {
             todo!("irrelevant for now")
         }
@@ -114,6 +114,6 @@ mod game {
         Engine::text("You have found some treasure!");
         Engine::text(format!("You now have {} gold.", state.gold));
 
-        Engine::choice(state).build()
+        Engine::choice().build(state)
     }
 }

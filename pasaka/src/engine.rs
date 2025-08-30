@@ -25,9 +25,8 @@ impl Engine {
         TEXT_BUF.with_borrow_mut(|buf| std::mem::take(buf))
     }
 
-    pub fn choice<S>(state: S) -> ChoiceBuilder<S> {
+    pub fn choice<S>() -> ChoiceBuilder<S> {
         ChoiceBuilder {
-            state,
             options: Vec::new(),
         }
     }

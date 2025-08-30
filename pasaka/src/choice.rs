@@ -12,7 +12,6 @@ pub(crate) struct ChoiceOption<S> {
 }
 
 pub struct ChoiceBuilder<S: 'static> {
-    pub(crate) state: S,
     pub(crate) options: Vec<ChoiceOption<S>>,
 }
 
@@ -31,7 +30,7 @@ impl<S> ChoiceBuilder<S> {
         self
     }
 
-    pub fn build(mut self) -> Choice {
+    pub fn build(mut self, state: S) -> Choice {
         let text = Engine::take_text();
         let labels = self
             .options
@@ -46,7 +45,7 @@ impl<S> ChoiceBuilder<S> {
                 .nth(index)
                 .expect("selected option should be within bounds of possible options");
 
-            (option.on_choose)(self.state, handle)
+            (option.on_choose)(state, handle)
         });
 
         Choice {

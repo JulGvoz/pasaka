@@ -11,3 +11,4 @@ serde = { version = "1.0.219", features = ["derive"] }
 [dev-dependencies]
 fastrand = "2.3.0"
 smol = "2.0.2"
+pasaka_macro = { path = "../pasaka_macro" }

@@ -85,6 +85,7 @@ mod game {
 
     use pasaka::{choice::*, engine::*};
 
+    #[derive(serde::Serialize, serde::Deserialize)]
     pub struct GameState {
         pub gold: i32,
         pub monster: bool,

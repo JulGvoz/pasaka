@@ -309,8 +309,19 @@ dependencies = [
  "console",
  "dialoguer",
  "fastrand",
+ "pasaka_macro",
  "serde",
  "smol",
+]
+
+[[package]]
+name = "pasaka_macro"
+version = "0.1.0"
+dependencies = [
+ "pasaka",
+ "quote",
+ "serde",
+ "syn",
 ]
 
 [[package]]

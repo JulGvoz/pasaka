@@ -1,0 +1,13 @@
+[package]
+name = "pasaka_macro"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1.0.40"
+syn = { version = "2.0.106", features = ["extra-traits", "full"] }
+pasaka = { path = "../pasaka" }
+serde = { version = "1.0.219", features = ["derive"] }

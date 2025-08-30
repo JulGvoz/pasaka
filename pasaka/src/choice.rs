@@ -87,7 +87,7 @@ impl ChoiceHandle {
         self.text_buffer.push(s.to_string());
     }
 
-    pub fn passage<S: 'static>(self, passage: impl Passage<S> + 'static, s: S) -> ChoiceResult {
+    pub fn passage<P: Passage>(self, passage: P, s: P::State) -> ChoiceResult {
         self.passage_with_state(passage.with_state(s))
     }
 

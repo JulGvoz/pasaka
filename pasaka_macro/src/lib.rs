@@ -26,7 +26,9 @@ pub fn passage(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
         #vis struct #name;
 
-        impl pasaka::Passage<#state_ty> for #name {
+        impl pasaka::Passage for #name {
+            type State = #state_ty;
+
             fn run(self, #engine_arg, #state_arg) #output {
                 #block
             }

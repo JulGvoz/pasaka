@@ -4,10 +4,12 @@ pub mod choice;
 pub mod engine;
 pub mod runner;
 
-pub trait Passage<S: 'static>: Copy + 'static {
-    fn run(self, h: PassageHandle, state: S) -> PassageResult;
+pub trait Passage: Copy + 'static {
+    type State;
 
-    fn with_state(self, state: S) -> PassageWithState {
+    fn run(self, h: PassageHandle, state: Self::State) -> PassageResult;
+
+    fn with_state(self, state: Self::State) -> PassageWithState {
         PassageWithState(Box::new(move |h: PassageHandle| self.run(h, state)))
     }
 }

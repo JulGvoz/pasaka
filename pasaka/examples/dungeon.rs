@@ -16,6 +16,7 @@ fn main() {
 mod combat {
     use pasaka::{PassageWithState, choice::*};
     use pasaka_macro::passage;
+    use serde::{Deserialize, Serialize};
 
     pub struct CombatState {
         player_hp: i32,

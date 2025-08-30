@@ -1,5 +1,5 @@
 use console::Term;
-use dialoguer::Select;
+use dialoguer::{Select, theme::ColorfulTheme};
 
 use crate::{
     choice::{Choice, ChoiceResult},
@@ -8,8 +8,8 @@ use crate::{
 
 pub struct CliRunner;
 
+#[allow(refining_impl_trait)]
 impl Runner for CliRunner {
-    #[allow(refining_impl_trait)]
     async fn render_choice(&mut self, choice: Choice) -> Option<ChoiceResult> {
         Term::stdout().clear_screen().unwrap();
 
@@ -22,7 +22,7 @@ impl Runner for CliRunner {
             return None;
         }
 
-        let index: usize = Select::new()
+        let index: usize = Select::with_theme(&ColorfulTheme::default())
             .default(0)
             .items(choice.labels)
             .interact()
@@ -31,5 +31,13 @@ impl Runner for CliRunner {
         let result: ChoiceResult = (choice.action)(index);
 
         Some(result)
+    }
+
+    async fn save<T: serde::Serialize>(&mut self, key: &str, value: T) -> bool {
+        todo!()
+    }
+
+    async fn load<T: serde::Serialize>(&mut self, key: &str) -> Option<T> {
+        todo!()
     }
 }

@@ -34,20 +34,21 @@ mod combat {
         }
     }
 
-    pub fn combat<S>(state: CombatState<S>) -> Choice {
-        Engine::text("You are fighting against a monster!");
-        Engine::text(format!("You have {} hp.", state.player_hp));
-        Engine::text(format!("It has {} hp.", state.enemy_hp));
+    pub fn combat<S>(engine: &mut Engine, state: CombatState<S>) -> Choice {
+        engine.text("You are fighting against a monster!");
+        engine.text(format!("You have {} hp.", state.player_hp));
+        engine.text(format!("It has {} hp.", state.enemy_hp));
 
         let damage = fastrand::i32(0..=5);
-        Engine::text(format!("It is attacking for {damage} damage!"));
+        engine.text(format!("It is attacking for {damage} damage!"));
 
-        Engine::choice()
-            .option("Attack it", move |mut state: CombatState<S>, h| {
+        engine
+            .choice()
+            .option("Attack it", move |mut state: CombatState<S>, mut h| {
                 state.enemy_hp -= 10;
-                Engine::text("You deal 10 damage to the monster.");
+                h.text("You deal 10 damage to the monster.");
                 if state.enemy_hp <= 0 {
-                    Engine::text("You have defeated the monster!");
+                    h.text("You have defeated the monster!");
                     h.passage(state.win_passage, state.win_state)
                 } else {
                     state.player_hp -= damage;
@@ -58,11 +59,11 @@ mod combat {
                     }
                 }
             })
-            .option("Defend against its attack", move |mut state, h| {
+            .option("Defend against its attack", move |mut state, mut h| {
                 let original_damage = damage;
                 let damage = 0.max(damage - 3);
                 state.player_hp -= damage;
-                Engine::text(format!("You block for {} damage", original_damage - damage));
+                h.text(format!("You block for {} damage", original_damage - damage));
                 if state.player_hp <= 0 {
                     h.passage(death, ())
                 } else {
@@ -72,10 +73,10 @@ mod combat {
             .build(state)
     }
 
-    fn death(_: ()) -> Choice {
-        Engine::text("You died fighting against the monster...");
+    fn death(engine: &mut Engine, _: ()) -> Choice {
+        engine.text("You died fighting against the monster...");
 
-        Engine::choice().build(())
+        engine.choice().build(())
     }
 }
 
@@ -89,21 +90,20 @@ mod game {
         pub monster: bool,
     }
 
-    pub fn caverns(state: GameState) -> Choice {
-        Engine::text("You are exploring the caverns.");
+    pub fn caverns(engine: &mut Engine, state: GameState) -> Choice {
+        engine.text("You are exploring the caverns.");
         if state.monster {
-            Engine::text("You see a path forwards, but it blocked by a monster");
+            engine.text("You see a path forwards, but it blocked by a monster");
 
-            Engine::choice()
+            engine
+                .choice()
                 .option("Engage the monster", |state, h| {
                     let combat_state = CombatState::new(20, 100, path, state);
 
                     h.passage(combat, combat_state)
                 })
-                .option("Explore more", |state, h| {
-                    Engine::text(
-                        "You explore the dungeon more, but don't find anything interesting.",
-                    );
+                .option("Explore more", |state, mut h| {
+                    h.text("You explore the dungeon more, but don't find anything interesting.");
                     h.passage(caverns, state)
                 })
                 .build(state)
@@ -112,12 +112,12 @@ mod game {
         }
     }
 
-    fn path(mut state: GameState) -> Choice {
+    fn path(engine: &mut Engine, mut state: GameState) -> Choice {
         state.gold += 5;
 
-        Engine::text("You have found some treasure!");
-        Engine::text(format!("You now have {} gold.", state.gold));
+        engine.text("You have found some treasure!");
+        engine.text(format!("You now have {} gold.", state.gold));
 
-        Engine::choice().build(state)
+        engine.choice().build(state)
     }
 }

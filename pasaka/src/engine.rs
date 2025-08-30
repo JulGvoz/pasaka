@@ -1,45 +1,42 @@
-use std::cell::RefCell;
-
 use crate::{
     choice::{Choice, ChoiceBuilder, Passage},
     runner::Runner,
 };
 
-thread_local! {
-    static TEXT_BUF: RefCell<Vec<String>> = RefCell::new(Vec::new());
-}
-
 pub struct Engine {
-    _private: (),
+    text_buffer: Vec<String>,
 }
 
 impl Engine {
-    pub fn text(s: impl ToString) {
-        // println!("{}", s.to_string())
-        TEXT_BUF.with_borrow_mut(|buf| {
-            buf.push(s.to_string());
-        })
+    pub fn text(&mut self, s: impl ToString) {
+        self.text_buffer.push(s.to_string());
     }
 
-    pub(crate) fn take_text() -> Vec<String> {
-        TEXT_BUF.with_borrow_mut(|buf| std::mem::take(buf))
+    pub(crate) fn take_text(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.text_buffer)
     }
 
-    pub fn choice<S>() -> ChoiceBuilder<S> {
+    pub fn choice<S>(&'_ mut self) -> ChoiceBuilder<'_, S> {
         ChoiceBuilder {
+            engine: self,
             options: Vec::new(),
         }
     }
 
     pub async fn run<S: 'static>(passage: Passage<S>, state: S, mut runner: impl Runner) {
-        let mut current: Box<dyn FnOnce() -> Choice> = Box::new(move || passage(state));
+        let mut engine = Engine {
+            text_buffer: Vec::new(),
+        };
+        let mut current: Box<dyn FnOnce(&mut Engine) -> Choice> =
+            Box::new(move |engine| passage(engine, state));
 
         loop {
-            let choice = current();
+            let choice = current(&mut engine);
             let result = runner.render_choice(choice).await;
             match result {
                 Some(result) => {
                     current = result.next_passage;
+                    engine.text_buffer.extend(result.handle.text_buffer);
                 }
                 None => break,
             }

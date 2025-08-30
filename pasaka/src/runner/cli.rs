@@ -2,20 +2,16 @@ use console::Term;
 use dialoguer::Select;
 
 use crate::{
-    choice::{ChoiceHandle, ChoiceResult},
+    choice::{Choice, ChoiceResult},
     runner::Runner,
 };
 
 pub struct CliRunner;
 
 impl Runner for CliRunner {
-    fn run_step(
-        &mut self,
-        current: Box<dyn FnOnce() -> crate::choice::Choice>,
-    ) -> Option<ChoiceResult> {
+    #[allow(refining_impl_trait)]
+    async fn render_choice(&mut self, choice: Choice) -> Option<ChoiceResult> {
         Term::stdout().clear_screen().unwrap();
-
-        let choice = current();
 
         for line in &choice.text {
             println!("{line}");
@@ -26,14 +22,14 @@ impl Runner for CliRunner {
             return None;
         }
 
-        let index = Select::new()
+        let index: usize = Select::new()
             .default(0)
             .items(choice.labels)
             .interact()
             .unwrap();
 
-        let handle = ChoiceHandle { _private: () };
-        let result = (choice.action)(index, handle);
+        let result: ChoiceResult = (choice.action)(index);
+
         Some(result)
     }
 }

@@ -31,9 +31,18 @@ impl Engine {
         }
     }
 
-    pub fn run<S: 'static>(passage: Passage<S>, state: S, mut runner: impl Runner) {
-        let current: Box<dyn FnOnce() -> Choice> = Box::new(move || passage(state));
+    pub async fn run<S: 'static>(passage: Passage<S>, state: S, mut runner: impl Runner) {
+        let mut current: Box<dyn FnOnce() -> Choice> = Box::new(move || passage(state));
 
-        runner.run_loop(current);
+        loop {
+            let choice = current();
+            let result = runner.render_choice(choice).await;
+            match result {
+                Some(result) => {
+                    current = result.next_passage;
+                }
+                None => break,
+            }
+        }
     }
 }

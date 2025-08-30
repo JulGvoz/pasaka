@@ -3,7 +3,7 @@ use crate::engine::Engine;
 pub struct Choice {
     pub(crate) text: Vec<String>,
     pub(crate) labels: Vec<String>,
-    pub(crate) action: Box<dyn FnOnce(usize, ChoiceHandle) -> ChoiceResult>,
+    pub(crate) action: Box<dyn FnOnce(usize) -> ChoiceResult>,
 }
 
 pub(crate) struct ChoiceOption<S> {
@@ -38,7 +38,8 @@ impl<S> ChoiceBuilder<S> {
             .map(|o| std::mem::take(&mut o.label))
             .collect();
 
-        let action = Box::new(move |index, handle| {
+        let handle = ChoiceHandle { _private: () };
+        let action = Box::new(move |index| {
             let option = self
                 .options
                 .into_iter()
@@ -57,7 +58,7 @@ impl<S> ChoiceBuilder<S> {
 }
 
 pub struct ChoiceHandle {
-    pub(crate) _private: (),
+    pub _private: (),
 }
 
 impl ChoiceHandle {

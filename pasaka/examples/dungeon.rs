@@ -3,14 +3,14 @@ use pasaka::{engine::Engine, runner::cli::CliRunner};
 use crate::game::{GameState, caverns};
 
 fn main() {
-    Engine::run(
+    smol::block_on(Engine::run(
         caverns,
         GameState {
             gold: 0,
             monster: true,
         },
         CliRunner,
-    );
+    ))
 }
 
 mod combat {
@@ -45,7 +45,9 @@ mod combat {
         Engine::choice()
             .option("Attack it", move |mut state: CombatState<S>, h| {
                 state.enemy_hp -= 10;
+                Engine::text("You deal 10 damage to the monster.");
                 if state.enemy_hp <= 0 {
+                    Engine::text("You have defeated the monster!");
                     h.passage(state.win_passage, state.win_state)
                 } else {
                     state.player_hp -= damage;
@@ -57,8 +59,10 @@ mod combat {
                 }
             })
             .option("Defend against its attack", move |mut state, h| {
+                let original_damage = damage;
                 let damage = 0.max(damage - 3);
                 state.player_hp -= damage;
+                Engine::text(format!("You block for {} damage", original_damage - damage));
                 if state.player_hp <= 0 {
                     h.passage(death, ())
                 } else {

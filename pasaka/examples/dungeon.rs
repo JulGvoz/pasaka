@@ -42,8 +42,8 @@ mod combat {
         let damage = fastrand::i32(0..=5);
         Engine::text(format!("It is attacking for {damage} damage!"));
 
-        Engine::choice::<CombatState<S>>()
-            .option("Attack it", move |mut state, h| {
+        Engine::choice()
+            .option("Attack it", move |mut state: CombatState<S>, h| {
                 state.enemy_hp -= 10;
                 if state.enemy_hp <= 0 {
                     h.passage(state.win_passage, state.win_state)
@@ -57,7 +57,7 @@ mod combat {
                 }
             })
             .option("Defend against its attack", move |mut state, h| {
-                let damage = damage / 2;
+                let damage = 0.max(damage - 3);
                 state.player_hp -= damage;
                 if state.player_hp <= 0 {
                     h.passage(death, ())

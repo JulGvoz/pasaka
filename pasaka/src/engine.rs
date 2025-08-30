@@ -1,5 +1,6 @@
 use crate::{
-    choice::{Choice, ChoiceBuilder, Passage},
+    Passage,
+    choice::{Choice, ChoiceBuilder},
     runner::Runner,
 };
 
@@ -23,12 +24,12 @@ impl Engine {
         }
     }
 
-    pub async fn run<S: 'static>(passage: Passage<S>, state: S, mut runner: impl Runner) {
+    pub async fn run<S: 'static>(passage: impl Passage<S>, state: S, mut runner: impl Runner) {
         let mut engine = Engine {
             text_buffer: Vec::new(),
         };
         let mut current: Box<dyn FnOnce(&mut Engine) -> Choice> =
-            Box::new(move |engine| passage(engine, state));
+            Box::new(move |engine| passage.run(engine, state));
 
         loop {
             let choice = current(&mut engine);

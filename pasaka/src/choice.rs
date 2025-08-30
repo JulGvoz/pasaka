@@ -1,4 +1,4 @@
-use crate::engine::Engine;
+use crate::{Passage, PassageWithState, engine::Engine};
 
 pub struct Choice {
     pub(crate) text: Vec<String>,
@@ -69,9 +69,16 @@ impl ChoiceHandle {
         self.text_buffer.push(s.to_string());
     }
 
-    pub fn passage<S: 'static>(self, p: Passage<S>, s: S) -> ChoiceResult {
+    pub fn passage<S: 'static>(self, passage: impl Passage<S> + 'static, s: S) -> ChoiceResult {
         ChoiceResult {
-            next_passage: Box::new(move |engine| p(engine, s)),
+            next_passage: Box::new(move |engine| passage.run(engine, s)),
+            handle: self,
+        }
+    }
+
+    pub fn passage_with_state(self, passage: PassageWithState) -> ChoiceResult {
+        ChoiceResult {
+            next_passage: passage.0,
             handle: self,
         }
     }
@@ -81,5 +88,3 @@ pub struct ChoiceResult {
     pub(crate) next_passage: Box<dyn FnOnce(&mut Engine) -> Choice>,
     pub(crate) handle: ChoiceHandle,
 }
-
-pub type Passage<S> = fn(&mut Engine, S) -> Choice;

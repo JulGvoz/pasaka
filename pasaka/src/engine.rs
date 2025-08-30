@@ -32,7 +32,7 @@ impl Engine {
 
         loop {
             let choice = current(&mut engine);
-            let result = runner.render_choice(choice).await;
+            let result = runner.render_choice(&mut engine, choice).await;
             match result {
                 Some(result) => {
                     current = result.next_passage;
@@ -41,5 +41,9 @@ impl Engine {
                 None => break,
             }
         }
+    }
+
+    pub async fn save(&mut self) -> ! {
+        todo!()
     }
 }

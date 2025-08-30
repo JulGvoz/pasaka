@@ -1,9 +1,27 @@
-use crate::{Passage, PassageWithState, engine::Engine};
+use crate::{Passage, PassageWithState};
 
-pub struct Choice {
+pub struct PassageResult {
     pub(crate) text: Vec<String>,
     pub(crate) labels: Vec<String>,
     pub(crate) action: Box<dyn FnOnce(usize) -> ChoiceResult>,
+}
+
+pub struct PassageHandle {
+    pub(crate) text_buffer: Vec<String>,
+}
+
+impl PassageHandle {
+    pub fn text(&mut self, s: impl ToString) -> &mut Self {
+        self.text_buffer.push(s.to_string());
+        self
+    }
+
+    pub fn choice<S>(self) -> ChoiceBuilder<S> {
+        ChoiceBuilder {
+            text: self.text_buffer,
+            options: Vec::new(),
+        }
+    }
 }
 
 pub(crate) struct ChoiceOption<S> {
@@ -11,12 +29,12 @@ pub(crate) struct ChoiceOption<S> {
     on_choose: Box<dyn FnOnce(S, ChoiceHandle) -> ChoiceResult>,
 }
 
-pub struct ChoiceBuilder<'a, S: 'static> {
-    pub(crate) engine: &'a mut Engine,
+pub struct ChoiceBuilder<S: 'static> {
+    text: Vec<String>,
     pub(crate) options: Vec<ChoiceOption<S>>,
 }
 
-impl<'a, S> ChoiceBuilder<'a, S> {
+impl<S> ChoiceBuilder<S> {
     pub fn option(
         mut self,
         label: impl ToString,
@@ -31,8 +49,8 @@ impl<'a, S> ChoiceBuilder<'a, S> {
         self
     }
 
-    pub fn build(mut self, state: S) -> Choice {
-        let text = self.engine.take_text();
+    pub fn build(mut self, state: S) -> PassageResult {
+        let text = self.text;
         let labels = self
             .options
             .iter_mut()
@@ -52,7 +70,7 @@ impl<'a, S> ChoiceBuilder<'a, S> {
             (option.on_choose)(state, handle)
         });
 
-        Choice {
+        PassageResult {
             text,
             labels,
             action,
@@ -70,21 +88,18 @@ impl ChoiceHandle {
     }
 
     pub fn passage<S: 'static>(self, passage: impl Passage<S> + 'static, s: S) -> ChoiceResult {
-        ChoiceResult {
-            next_passage: Box::new(move |engine| passage.run(engine, s)),
-            handle: self,
-        }
+        self.passage_with_state(passage.with_state(s))
     }
 
     pub fn passage_with_state(self, passage: PassageWithState) -> ChoiceResult {
         ChoiceResult {
-            next_passage: passage.0,
+            next_passage: passage,
             handle: self,
         }
     }
 }
 
 pub struct ChoiceResult {
-    pub(crate) next_passage: Box<dyn FnOnce(&mut Engine) -> Choice>,
+    pub(crate) next_passage: PassageWithState,
     pub(crate) handle: ChoiceHandle,
 }

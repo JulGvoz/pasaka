@@ -2,7 +2,7 @@ use console::Term;
 use dialoguer::{Select, theme::ColorfulTheme};
 
 use crate::{
-    choice::{Choice, ChoiceResult},
+    choice::{ChoiceResult, PassageResult},
     engine::Engine,
     runner::Runner,
 };
@@ -11,7 +11,12 @@ pub struct CliRunner;
 
 #[allow(refining_impl_trait)]
 impl Runner for CliRunner {
-    async fn render_choice(&mut self, engine: &mut Engine, choice: Choice) -> Option<ChoiceResult> {
+    async fn render(
+        &mut self,
+        engine: &mut Engine,
+        prev_text: Vec<String>,
+        choice: PassageResult,
+    ) -> Option<ChoiceResult> {
         Term::stdout().clear_screen().unwrap();
 
         for line in &choice.text {

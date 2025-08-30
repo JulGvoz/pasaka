@@ -14,7 +14,7 @@ fn main() {
 }
 
 mod combat {
-    use pasaka::{PassageWithState, choice::*, engine::*};
+    use pasaka::{PassageWithState, choice::*};
     use pasaka_macro::passage;
 
     pub struct CombatState {
@@ -34,16 +34,15 @@ mod combat {
     }
 
     #[passage]
-    pub fn Combat(engine: &mut Engine, state: CombatState) -> Choice {
-        engine.text("You are fighting against a monster!");
-        engine.text(format!("You have {} hp.", state.player_hp));
-        engine.text(format!("It has {} hp.", state.enemy_hp));
+    pub fn Combat(mut h: PassageHandle, state: CombatState) -> PassageResult {
+        h.text("You are fighting against a monster!")
+            .text(format!("You have {} hp.", state.player_hp))
+            .text(format!("It has {} hp.", state.enemy_hp));
 
         let damage = fastrand::i32(0..=5);
-        engine.text(format!("It is attacking for {damage} damage!"));
+        h.text(format!("It is attacking for {damage} damage!"));
 
-        engine
-            .choice()
+        h.choice()
             .option("Attack it", move |mut state: CombatState, mut h| {
                 state.enemy_hp -= 10;
                 h.text("You deal 10 damage to the monster.");
@@ -75,17 +74,17 @@ mod combat {
     }
 
     #[passage]
-    fn Death(engine: &mut Engine, _: ()) -> Choice {
-        engine.text("You died fighting against the monster...");
+    fn Death(mut h: PassageHandle, _: ()) -> PassageResult {
+        h.text("You died fighting against the monster...");
 
-        engine.choice().build(())
+        h.choice().build(())
     }
 }
 
 mod game {
     use super::combat::*;
 
-    use pasaka::{choice::*, engine::*};
+    use pasaka::choice::*;
     use pasaka_macro::passage;
 
     #[derive(serde::Serialize, serde::Deserialize)]
@@ -95,13 +94,12 @@ mod game {
     }
 
     #[passage]
-    pub fn Caverns(engine: &mut Engine, state: GameState) -> Choice {
-        engine.text("You are exploring the caverns.");
+    pub fn Caverns(mut h: PassageHandle, state: GameState) -> PassageResult {
+        h.text("You are exploring the caverns.");
         if state.monster {
-            engine.text("You see a path forwards, but it blocked by a monster");
+            h.text("You see a path forwards, but it blocked by a monster");
 
-            engine
-                .choice()
+            h.choice()
                 .option("Engage the monster", |state, h| {
                     let combat_state = CombatState::new(20, 100, Path.with_state(state));
 
@@ -118,12 +116,12 @@ mod game {
     }
 
     #[passage]
-    fn Path(engine: &mut Engine, mut state: GameState) -> Choice {
+    fn Path(mut h: PassageHandle, mut state: GameState) -> PassageResult {
         state.gold += 5;
 
-        engine.text("You have found some treasure!");
-        engine.text(format!("You now have {} gold.", state.gold));
+        h.text("You have found some treasure!");
+        h.text(format!("You now have {} gold.", state.gold));
 
-        engine.choice().build(state)
+        h.choice().build(state)
     }
 }

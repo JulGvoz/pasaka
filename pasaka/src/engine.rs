@@ -1,43 +1,37 @@
 use crate::{
-    Passage,
-    choice::{Choice, ChoiceBuilder},
+    Passage, PassageWithState,
+    choice::{PassageHandle, PassageResult},
     runner::Runner,
 };
 
 pub struct Engine {
-    text_buffer: Vec<String>,
+    _private: (),
+}
+
+struct EngineState {
+    prev_text: Vec<String>,
+    passage_with_state: PassageWithState,
 }
 
 impl Engine {
-    pub fn text(&mut self, s: impl ToString) {
-        self.text_buffer.push(s.to_string());
-    }
-
-    pub(crate) fn take_text(&mut self) -> Vec<String> {
-        std::mem::take(&mut self.text_buffer)
-    }
-
-    pub fn choice<S>(&'_ mut self) -> ChoiceBuilder<'_, S> {
-        ChoiceBuilder {
-            engine: self,
-            options: Vec::new(),
-        }
-    }
-
     pub async fn run<S: 'static>(passage: impl Passage<S>, state: S, mut runner: impl Runner) {
-        let mut engine = Engine {
-            text_buffer: Vec::new(),
+        let mut engine_state = EngineState {
+            prev_text: Vec::new(),
+            passage_with_state: passage.with_state(state),
         };
-        let mut current: Box<dyn FnOnce(&mut Engine) -> Choice> =
-            Box::new(move |engine| passage.run(engine, state));
+
+        let mut engine = Engine { _private: () };
 
         loop {
-            let choice = current(&mut engine);
-            let result = runner.render_choice(&mut engine, choice).await;
-            match result {
+            let handle = PassageHandle {
+                text_buffer: Vec::new(),
+            };
+            let passage_result = engine_state.passage_with_state.0(handle);
+            let result = runner.render(&mut engine, engine_state.prev_text, passage_result);
+            match result.await {
                 Some(result) => {
-                    current = result.next_passage;
-                    engine.text_buffer.extend(result.handle.text_buffer);
+                    engine_state.prev_text = result.handle.text_buffer;
+                    engine_state.passage_with_state = result.next_passage;
                 }
                 None => break,
             }

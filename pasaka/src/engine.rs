@@ -1,17 +1,19 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{Passage, PassageImpl, choice::PassageHandle, runner::Runner};
+use crate::{
+    Passage, PassageImpl,
+    choice::PassageHandle,
+    runner::{RenderResult, Runner},
+};
 
 pub struct Engine {
     state: EngineState,
-    request_save: bool,
-    request_load: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EngineState {
     prev_text: Vec<String>,
-    passage_with_state: Option<Passage>,
+    passage: Option<Passage>,
 }
 
 impl Engine {
@@ -19,50 +21,44 @@ impl Engine {
         let mut engine = Engine {
             state: EngineState {
                 prev_text: Vec::new(),
-                passage_with_state: Some(passage.with_state(state)),
+                passage: Some(passage.with_state(state)),
             },
-            request_save: false,
-            request_load: false,
         };
 
         loop {
             let handle = PassageHandle {
                 text_buffer: Vec::new(),
             };
-            let passage = if let Some(passage) = engine.state.passage_with_state.take() {
-                passage
-            } else {
-                break;
-            };
+
+            let passage = engine
+                .state
+                .passage
+                .take()
+                .expect("state should hold current passage");
+            let old_passage = passage.clone();
             let passage_result = passage.run(handle);
             let prev_text = std::mem::take(&mut engine.state.prev_text);
-            let result = runner.render(&mut engine, prev_text, passage_result);
+            let result = runner.render(&mut engine, &prev_text, passage_result);
             match result.await {
-                Some(result) => {
-                    engine.state.prev_text = result.handle.text_buffer;
-                    engine.state.passage_with_state = Some(result.next_passage);
+                RenderResult::Choice(choice_result) => {
+                    engine.state.prev_text = choice_result.handle.text_buffer;
+                    engine.state.passage = Some(choice_result.next_passage);
                 }
-                None => break,
-            }
-
-            if engine.request_save {
-                engine.request_save = false;
-                runner.save(&engine.state).await;
-            }
-            if engine.request_load {
-                engine.request_load = false;
-                if let Some(state) = runner.load().await {
-                    engine.state = state;
+                RenderResult::Save => {
+                    engine.state.prev_text = prev_text;
+                    engine.state.passage = Some(old_passage);
+                    runner.save(&engine.state).await;
                 }
+                RenderResult::Load => {
+                    if let Some(state) = runner.load().await {
+                        engine.state = state;
+                    } else {
+                        engine.state.passage = Some(old_passage);
+                        runner.error("Failed to load").await;
+                    }
+                }
+                RenderResult::Exit => break,
             }
         }
-    }
-
-    pub fn request_save(&mut self) {
-        self.request_save = true;
-    }
-
-    pub fn request_load(&mut self) {
-        self.request_load = true;
     }
 }

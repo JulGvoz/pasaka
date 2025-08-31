@@ -6,7 +6,7 @@ use dialoguer::{Input, Select, theme::ColorfulTheme};
 use crate::{
     choice::{ChoiceResult, PassageResult},
     engine::{Engine, EngineState},
-    runner::Runner,
+    runner::{RenderResult, Runner},
 };
 
 pub struct CliRunner;
@@ -15,13 +15,13 @@ pub struct CliRunner;
 impl Runner for CliRunner {
     async fn render(
         &mut self,
-        engine: &mut Engine,
-        prev_text: Vec<String>,
+        _engine: &mut Engine,
+        prev_text: &[String],
         choice: PassageResult,
-    ) -> Option<ChoiceResult> {
+    ) -> RenderResult {
         Term::stdout().clear_screen().unwrap();
 
-        for line in &prev_text {
+        for line in prev_text {
             println!("{line}");
         }
         if !prev_text.is_empty() {
@@ -36,7 +36,7 @@ impl Runner for CliRunner {
         }
 
         if choice.labels.is_empty() {
-            return None;
+            return RenderResult::Exit;
         }
 
         let index: usize = loop {
@@ -56,8 +56,8 @@ impl Runner for CliRunner {
                         .interact_opt()
                         .unwrap();
                     match sl_choice {
-                        Some(0) => engine.request_save(),
-                        Some(1) => engine.request_load(),
+                        Some(0) => return RenderResult::Save,
+                        Some(1) => return RenderResult::Load,
                         _ => continue,
                     }
                 }
@@ -66,7 +66,7 @@ impl Runner for CliRunner {
 
         let result: ChoiceResult = (choice.action)(index);
 
-        Some(result)
+        RenderResult::Choice(result)
     }
 
     async fn save(&mut self, value: &EngineState) -> bool {

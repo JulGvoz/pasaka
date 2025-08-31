@@ -1,9 +1,11 @@
+use std::fs::File;
+
 use console::Term;
-use dialoguer::{Select, theme::ColorfulTheme};
+use dialoguer::{Input, Select, theme::ColorfulTheme};
 
 use crate::{
     choice::{ChoiceResult, PassageResult},
-    engine::Engine,
+    engine::{Engine, EngineState},
     runner::Runner,
 };
 
@@ -54,8 +56,8 @@ impl Runner for CliRunner {
                         .interact_opt()
                         .unwrap();
                     match sl_choice {
-                        Some(0) => todo!("save"),
-                        Some(1) => todo!("load"),
+                        Some(0) => engine.request_save(),
+                        Some(1) => engine.request_load(),
                         _ => continue,
                     }
                 }
@@ -67,11 +69,33 @@ impl Runner for CliRunner {
         Some(result)
     }
 
-    async fn save<T: serde::Serialize>(&mut self, key: &str, value: T) -> bool {
-        todo!()
+    async fn save(&mut self, value: &EngineState) -> bool {
+        let path: String = if let Ok(path) = Input::new()
+            .with_prompt("Save to file:")
+            .report(true)
+            .interact_text()
+        {
+            path
+        } else {
+            return false;
+        };
+        let file = if let Ok(file) = File::create(path) {
+            file
+        } else {
+            return false;
+        };
+
+        let result = serde_json::to_writer(file, value);
+
+        result.is_ok()
     }
 
-    async fn load<T: serde::Serialize>(&mut self, key: &str) -> Option<T> {
-        todo!()
+    async fn load(&mut self) -> Option<EngineState> {
+        let path: String = Input::new()
+            .with_prompt("Load file:")
+            .interact_text()
+            .ok()?;
+        let file = File::open(path).ok()?;
+        serde_json::from_reader(file).ok()?
     }
 }

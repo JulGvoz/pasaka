@@ -1,8 +1,6 @@
-use serde::Serialize;
-
 use crate::{
     choice::{ChoiceResult, PassageResult},
-    engine::Engine,
+    engine::{Engine, EngineState},
 };
 
 pub mod cli;
@@ -15,7 +13,7 @@ pub trait Runner {
         choice: PassageResult,
     ) -> impl IntoFuture<Output = Option<ChoiceResult>>;
 
-    fn save<T: Serialize>(&mut self, key: &str, value: T) -> impl Future<Output = bool>;
+    fn save(&mut self, value: &EngineState) -> impl Future<Output = bool>;
 
-    fn load<T: Serialize>(&mut self, key: &str) -> impl Future<Output = Option<T>>;
+    fn load(&mut self) -> impl Future<Output = Option<EngineState>>;
 }

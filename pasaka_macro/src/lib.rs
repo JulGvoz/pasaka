@@ -1,5 +1,5 @@
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::{ItemFn, PatType, Type, parse_macro_input};
 
 #[proc_macro_attribute]
@@ -22,6 +22,8 @@ pub fn passage(_attr: TokenStream, item: TokenStream) -> TokenStream {
         _ => panic!("expected typed state arguments"),
     };
 
+    let register_fn = format_ident!("__register_passge_{}", name);
+
     let expanded = quote! {
         #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
         #vis struct #name;
@@ -40,6 +42,11 @@ pub fn passage(_attr: TokenStream, item: TokenStream) -> TokenStream {
             fn name(&self) -> &'static str {
                 stringify! (#name)
             }
+        }
+
+        #[pasaka::ctor]
+        fn #register_fn() {
+            pasaka::register_passage(stringify! (#name), #name);
         }
     };
     expanded.into()

@@ -6,6 +6,8 @@ use crate::{
 };
 
 pub mod cli;
+#[cfg(target_arch = "wasm32")]
+pub mod wasm;
 
 pub enum RenderResult {
     Choice(ChoiceResult),

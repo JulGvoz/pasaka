@@ -127,3 +127,5 @@ mod game {
         h.choice().build(state)
     }
 }
+
+pub use pasaka_macro::*;

@@ -76,5 +76,3 @@ pub fn register_passage<P: PassageImpl + Send + Sync>(name: &'static str, passag
         .expect("registering passage registry should not panic")
         .insert(name.to_string(), passage_to_fn(passage));
 }
-
-pub use ctor::ctor;

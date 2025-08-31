@@ -45,7 +45,7 @@ pub fn passage(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
         #[allow(non_snake_case)]
-        #[pasaka::ctor]
+        #[ctor::ctor]
         fn #register_fn() {
             pasaka::register_passage(stringify! (#name), #name);
         }

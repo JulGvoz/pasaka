@@ -1,4 +1,4 @@
-use crate::{Passage, PassageWithState, choice::PassageHandle, runner::Runner};
+use crate::{Passage, PassageImpl, choice::PassageHandle, runner::Runner};
 
 pub struct Engine {
     state: EngineState,
@@ -6,11 +6,11 @@ pub struct Engine {
 
 struct EngineState {
     prev_text: Vec<String>,
-    passage_with_state: Option<PassageWithState>,
+    passage_with_state: Option<Passage>,
 }
 
 impl Engine {
-    pub async fn run<P: Passage>(passage: P, state: P::State, mut runner: impl Runner) {
+    pub async fn run<P: PassageImpl>(passage: P, state: P::State, mut runner: impl Runner) {
         let mut engine = Engine {
             state: EngineState {
                 prev_text: Vec::new(),
@@ -27,7 +27,7 @@ impl Engine {
             } else {
                 break;
             };
-            let passage_result = passage.0(handle);
+            let passage_result = passage.run(handle);
             let prev_text = std::mem::take(&mut engine.state.prev_text);
             let result = runner.render(&mut engine, prev_text, passage_result);
             match result.await {

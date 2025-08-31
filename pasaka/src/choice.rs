@@ -1,4 +1,4 @@
-use crate::{Passage, PassageWithState};
+use crate::{PassageImpl, Passage};
 
 pub struct PassageResult {
     pub(crate) text: Vec<String>,
@@ -87,11 +87,11 @@ impl ChoiceHandle {
         self.text_buffer.push(s.to_string());
     }
 
-    pub fn passage<P: Passage>(self, passage: P, s: P::State) -> ChoiceResult {
+    pub fn passage<P: PassageImpl>(self, passage: P, s: P::State) -> ChoiceResult {
         self.passage_with_state(passage.with_state(s))
     }
 
-    pub fn passage_with_state(self, passage: PassageWithState) -> ChoiceResult {
+    pub fn passage_with_state(self, passage: Passage) -> ChoiceResult {
         ChoiceResult {
             next_passage: passage,
             handle: self,
@@ -100,6 +100,6 @@ impl ChoiceHandle {
 }
 
 pub struct ChoiceResult {
-    pub(crate) next_passage: PassageWithState,
+    pub(crate) next_passage: Passage,
     pub(crate) handle: ChoiceHandle,
 }

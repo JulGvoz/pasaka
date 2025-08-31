@@ -26,11 +26,19 @@ pub fn passage(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
         #vis struct #name;
 
-        impl pasaka::Passage for #name {
+        impl pasaka::PassageImpl for #name {
             type State = #state_ty;
 
-            fn run(self, #engine_arg, #state_arg) #output {
+            fn run(&self, #engine_arg, #state_arg) #output {
                 #block
+            }
+
+            fn box_clone(&self) -> Box<dyn pasaka::PassageImpl<State = Self::State>> {
+                Box::new(self.clone())
+            }
+
+            fn name(&self) -> &'static str {
+                stringify! (#name)
             }
         }
     };

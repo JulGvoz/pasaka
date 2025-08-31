@@ -4,29 +4,42 @@ pub mod choice;
 pub mod engine;
 pub mod runner;
 
-pub trait Passage: Copy + 'static {
+pub trait PassageImpl: 'static
+where
+    Self::State: serde::Serialize + for<'a> serde::Deserialize<'a>,
+{
     type State;
 
-    fn run(self, h: PassageHandle, state: Self::State) -> PassageResult;
+    fn run(&self, h: PassageHandle, state: Self::State) -> PassageResult;
 
-    fn with_state(self, state: Self::State) -> PassageWithState {
-        PassageWithState(Box::new(move |h: PassageHandle| self.run(h, state)))
+    fn with_state(&self, state: Self::State) -> Passage {
+        Passage {
+            state: serde_json::to_value(state).unwrap(),
+            fn_name: self.name().to_string(),
+        }
+    }
+
+    fn box_clone(&self) -> Box<dyn PassageImpl<State = Self::State>>;
+
+    fn name(&self) -> &'static str;
+
+    fn as_fn(&'_ self) -> Box<dyn Fn(PassageHandle, serde_json::Value) -> PassageResult + '_> {
+        Box::new(|h, value| {
+            let s: Self::State = serde_json::from_value(value)
+                .expect("deserialized value should match passage state");
+            self.run(h, s)
+        })
     }
 }
 
-// #[derive(Debug, serde::Serialize, serde::Deserialize)]
-// struct BoundPassage<P, S>
-// where
-//     P: Passage<S> + 'static,
-//     S: 'static,
-// {
-//     passage: P,
-//     state: S,
-// }
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct Passage {
+    state: serde_json::Value,
+    fn_name: String,
+}
 
-// #[typetag::serde]
-// pub trait PassageErased {}
-
-// impl<P, S> PassageErased for BoundPassage<P, S> where P: serde::Serialize + Passage<S> , S: 'static{}
-
-pub struct PassageWithState(Box<dyn FnOnce(PassageHandle) -> PassageResult>);
+impl Passage {
+    pub fn run(self, h: PassageHandle) -> PassageResult {
+        todo!()
+    }
+}

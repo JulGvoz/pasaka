@@ -19,10 +19,19 @@ impl Runner for CliRunner {
     ) -> Option<ChoiceResult> {
         Term::stdout().clear_screen().unwrap();
 
+        for line in &prev_text {
+            println!("{line}");
+        }
+        if !prev_text.is_empty() {
+            println!();
+        }
+
         for line in &choice.text {
             println!("{line}");
         }
-        println!();
+        if !choice.text.is_empty() {
+            println!();
+        }
 
         if choice.labels.is_empty() {
             return None;

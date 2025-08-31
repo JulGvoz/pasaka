@@ -14,18 +14,19 @@ fn main() {
 }
 
 mod combat {
-    use pasaka::{PassageWithState, choice::*};
+    use pasaka::{Passage, choice::*};
     use pasaka_macro::passage;
     use serde::{Deserialize, Serialize};
 
+    #[derive(Debug, Serialize, Deserialize)]
     pub struct CombatState {
         player_hp: i32,
         enemy_hp: i32,
-        on_win: PassageWithState,
+        on_win: Passage,
     }
 
     impl CombatState {
-        pub fn new(player_hp: i32, enemy_hp: i32, on_win: PassageWithState) -> Self {
+        pub fn new(player_hp: i32, enemy_hp: i32, on_win: Passage) -> Self {
             Self {
                 player_hp,
                 enemy_hp,
@@ -88,7 +89,7 @@ mod game {
     use pasaka::choice::*;
     use pasaka_macro::passage;
 
-    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Debug, serde::Serialize, serde::Deserialize)]
     pub struct GameState {
         pub gold: i32,
         pub monster: bool,

@@ -22,7 +22,7 @@ pub fn passage(_attr: TokenStream, item: TokenStream) -> TokenStream {
         _ => panic!("expected typed state arguments"),
     };
 
-    let register_fn = format_ident!("__register_passge_{}", name);
+    let register_fn = format_ident!("__register_passage_{}", name);
 
     let expanded = quote! {
         #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]

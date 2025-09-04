@@ -1207,14 +1207,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasm-ctor-test"
-version = "0.1.0"
-dependencies = [
- "inventory",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "web-sys"
 version = "0.3.77"
 source = "registry+https://github.com/rust-lang/crates.io-index"

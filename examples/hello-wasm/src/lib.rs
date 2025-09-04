@@ -6,7 +6,6 @@ use pasaka::{
 use pasaka_macro::passage;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
-use web_sys::js_sys::JsString;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameState {
@@ -45,5 +44,9 @@ pub fn start() {
 
     web_sys::console::log_1(&"Hello, WASM!".into());
 
-    wasm_bindgen_futures::spawn_local(Engine::run(StartPoint, GameState { count: 0 }, WasmRunner));
+    wasm_bindgen_futures::spawn_local(Engine::run(
+        StartPoint,
+        GameState { count: 0 },
+        WasmRunner::new("text", "choices"),
+    ));
 }

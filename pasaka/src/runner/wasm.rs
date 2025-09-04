@@ -4,7 +4,21 @@ use crate::{
     runner::{RenderResult, Runner},
 };
 
-pub struct WasmRunner;
+pub struct WasmRunner {
+    text_container_id: String,
+    choices_container_id: String,
+}
+
+impl WasmRunner {
+    pub fn new(text_id: impl ToString, choices_id: impl ToString) -> Self {
+        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
+        Self {
+            text_container_id: text_id.to_string(),
+            choices_container_id: choices_id.to_string(),
+        }
+    }
+}
 
 #[allow(refining_impl_trait)]
 impl Runner for WasmRunner {
@@ -31,10 +45,23 @@ impl Runner for WasmRunner {
         }
         text.push_str("<br />");
 
-        let elem = document.create_element("p").unwrap();
-        elem.set_inner_html(&text);
+        let text_elem = document
+            .get_element_by_id(&self.text_container_id)
+            .expect("no text container found");
+        text_elem.set_inner_html(&text);
 
-        body.append_child(&elem).unwrap();
+        let choice_elem = document
+            .get_element_by_id(&self.choices_container_id)
+            .expect("no choice container found");
+
+        for label in choice.labels {
+            let list_item = document.create_element("li").unwrap();
+            let label_elem = document.create_element("a").unwrap();
+            label_elem.set_text_content(Some(&label));
+
+            list_item.append_child(&label_elem).unwrap();
+            choice_elem.append_child(&list_item).unwrap();
+        }
 
         todo!()
     }

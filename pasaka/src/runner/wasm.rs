@@ -30,17 +30,14 @@ impl WasmRunner {
         for (i, choice) in choices.iter().enumerate() {
             let mut tx = tx.clone();
             let listener = EventListener::once(&choice, "click", move |_event| {
-                web_sys::console::log_1(&format!("make choice {i}").into());
                 let _ = tx.try_send(i);
             });
             listeners.push(listener);
         }
 
         async move {
-            web_sys::console::log_1(&"begin wait".into());
             let index = rx.next().await.expect("choice should be made");
             drop(rx);
-            web_sys::console::log_1(&format!("received choice {index}").into());
             drop(listeners);
             index
         }
@@ -55,7 +52,6 @@ impl Runner for WasmRunner {
         prev_text: &[String],
         choice: PassageResult,
     ) -> RenderResult {
-        web_sys::console::log_1(&"render passage".into());
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("document should have a body");
 

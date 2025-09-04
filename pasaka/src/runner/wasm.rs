@@ -1,4 +1,4 @@
-use futures::{SinkExt, StreamExt};
+use futures::StreamExt;
 use gloo::events::EventListener;
 use web_sys::Element;
 
@@ -51,14 +51,13 @@ impl WasmRunner {
 impl Runner for WasmRunner {
     async fn render(
         &mut self,
-        engine: &mut Engine,
+        _engine: &mut Engine,
         prev_text: &[String],
         choice: PassageResult,
     ) -> RenderResult {
         web_sys::console::log_1(&"render passage".into());
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("document should have a body");
-        let body = document.body().expect("document should have a body");
 
         let mut text = String::new();
         for line in prev_text {
@@ -80,6 +79,7 @@ impl Runner for WasmRunner {
         let choice_elem = document
             .get_element_by_id(&self.choices_container_id)
             .expect("no choice container found");
+        choice_elem.set_inner_html("");
 
         if choice.labels.is_empty() {
             return RenderResult::Exit;

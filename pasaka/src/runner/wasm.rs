@@ -1,3 +1,7 @@
+use futures::{SinkExt, StreamExt};
+use gloo::events::EventListener;
+use web_sys::Element;
+
 use crate::{
     choice::PassageResult,
     engine::{Engine, EngineState},
@@ -16,6 +20,29 @@ impl WasmRunner {
         Self {
             text_container_id: text_id.to_string(),
             choices_container_id: choices_id.to_string(),
+        }
+    }
+
+    fn make_choice(&mut self, choices: &[Element]) -> impl std::future::Future<Output = usize> {
+        let (tx, mut rx) = ::futures::channel::mpsc::channel(1);
+
+        let mut listeners = Vec::new();
+        for (i, choice) in choices.iter().enumerate() {
+            let mut tx = tx.clone();
+            let listener = EventListener::once(&choice, "click", move |_event| {
+                web_sys::console::log_1(&format!("make choice {i}").into());
+                let _ = tx.try_send(i);
+            });
+            listeners.push(listener);
+        }
+
+        async move {
+            web_sys::console::log_1(&"begin wait".into());
+            let index = rx.next().await.expect("choice should be made");
+            drop(rx);
+            web_sys::console::log_1(&format!("received choice {index}").into());
+            drop(listeners);
+            index
         }
     }
 }
@@ -54,16 +81,25 @@ impl Runner for WasmRunner {
             .get_element_by_id(&self.choices_container_id)
             .expect("no choice container found");
 
+        if choice.labels.is_empty() {
+            return RenderResult::Exit;
+        }
+
+        let mut label_links = Vec::new();
         for label in choice.labels {
             let list_item = document.create_element("li").unwrap();
             let label_elem = document.create_element("a").unwrap();
             label_elem.set_text_content(Some(&label));
+            label_elem.set_attribute("href", "#").unwrap();
 
             list_item.append_child(&label_elem).unwrap();
             choice_elem.append_child(&list_item).unwrap();
+            label_links.push(label_elem);
         }
 
-        todo!()
+        let index = self.make_choice(&label_links).await;
+
+        RenderResult::Choice((choice.action)(index))
     }
 
     async fn save(&mut self, value: &EngineState) -> bool {

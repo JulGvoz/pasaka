@@ -1,4 +1,5 @@
 use pasaka::{
+    PassageImpl,
     choice::{PassageHandle, PassageResult},
     engine::Engine,
     runner::wasm::WasmRunner,
@@ -44,7 +45,7 @@ pub fn start() {
 
     web_sys::console::log_1(&"Hello, WASM!".into());
 
-    let engine = Engine::new(StartPoint, GameState { count: 0 });
+    let engine = Engine::new(StartPoint.with_state(GameState { count: 0 }));
     let runner = Box::new(WasmRunner::new(engine, "text", "choices", "save", "load"));
     // We never plan to drop this
     let runner = Box::leak(runner);

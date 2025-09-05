@@ -1,3 +1,4 @@
+use gloo_storage::{LocalStorage, Storage};
 use yew::prelude::*;
 
 use crate::{Passage, choice::PassageResult, engine::Engine};
@@ -36,7 +37,7 @@ impl Component for WebRunner {
         Self { engine, current }
     }
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::Choice(i) => {
                 if i >= self.current.labels.len() {
@@ -51,8 +52,20 @@ impl Component for WebRunner {
                 unsafe { std::ptr::write(&mut self.current, self.engine.step()) };
                 true
             }
-            Msg::Save => todo!(),
-            Msg::Load => todo!(),
+            Msg::Save => {
+                let state = self.engine.state().clone();
+                let _ = LocalStorage::set("save", state);
+                false
+            }
+            Msg::Load => {
+                let Ok(state) = LocalStorage::get("save") else {
+                    return false;
+                };
+                self.engine.load_state(state);
+                self.current = self.engine.step();
+
+                true
+            }
         }
     }
 
@@ -81,6 +94,9 @@ impl Component for WebRunner {
             })
             .collect();
 
+        let save = ctx.link().callback(|_| Msg::Save);
+        let load = ctx.link().callback(|_| Msg::Load);
+
         html! {
             <>
             <p>
@@ -91,6 +107,9 @@ impl Component for WebRunner {
                 {choices}
                 </ul>
             </div>
+            <hr />
+            <p><a href="javascript:void(0)" onclick={save}>{"Save"}</a></p>
+            <p><a href="javascript:void(0)" onclick={load}>{"Load"}</a></p>
             </>
         }
     }

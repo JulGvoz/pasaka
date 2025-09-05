@@ -929,6 +929,7 @@ dependencies = [
  "erased-serde",
  "futures",
  "gloo 0.11.0",
+ "gloo-storage 0.3.0",
  "serde",
  "serde_json",
  "uuid",

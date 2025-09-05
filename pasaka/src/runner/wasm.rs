@@ -1,20 +1,21 @@
 use futures::StreamExt;
 use gloo::events::EventListener;
-use web_sys::{Document, Element};
+use web_sys::{Document, Element, Window};
 
 use crate::{choice::PassageResult, engine::Engine};
 
 pub struct WasmRunner {
     engine: Engine,
 
-    text_elem: Element,
-    choice_elem: Element,
-    save_id: String,
-    load_id: String,
-
+    window: Window,
     document: Document,
+    text: Element,
+    choice: Element,
+    save: Option<Element>,
+    load: Option<Element>,
 
-    choice_listeners: Vec<EventListener>,
+    save_listener: Option<EventListener>,
+    load_listener: Option<EventListener>,
 }
 
 impl WasmRunner {
@@ -26,31 +27,54 @@ impl WasmRunner {
         load_id: impl ToString,
     ) -> Self {
         let window = web_sys::window().expect("no global `window` exists");
-        let document = window.document().expect("document should have a body");
+        let document = window.document().expect("window should have a document");
 
-        let text_elem = document
+        let text = document
             .get_element_by_id(&text_id.to_string())
             .expect("no text container found");
 
-        let choice_elem = document
+        let choice = document
             .get_element_by_id(&choices_id.to_string())
             .expect("no choice container found");
 
+        let save: Option<Element> = document.get_element_by_id(&save_id.to_string());
+        let load: Option<Element> = document.get_element_by_id(&load_id.to_string());
+
+        let save_listener = None;
+        let load_listener = None;
+
         Self {
             engine,
-            text_elem,
-            choice_elem,
-            save_id: save_id.to_string(),
-            load_id: load_id.to_string(),
 
+            window,
             document,
+            text,
+            choice,
+            save,
+            load,
 
-            choice_listeners: Vec::new(),
+            save_listener,
+            load_listener,
         }
     }
 
     pub async fn run(&mut self) {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
+        if let Some(save) = &self.save {
+            let listener = EventListener::new(&save, "click", |_event: &web_sys::Event| {
+                // todo: data escapes
+                // self.save();
+            });
+            self.save_listener = Some(listener)
+        }
+        if let Some(load) = &self.load {
+            let listener = EventListener::new(&load, "click", |_event| {
+                // todo
+                // self.load();
+            });
+            self.load_listener = Some(listener)
+        }
 
         loop {
             let passage = self.engine.step();
@@ -70,11 +94,11 @@ impl WasmRunner {
             text.push_str(line);
             text.push_str("<br />");
         }
-        self.text_elem.set_inner_html(&text);
+        self.text.set_inner_html(&text);
     }
 
     pub fn show_choice(&self, passage: &PassageResult) -> Vec<Element> {
-        self.choice_elem.set_inner_html("");
+        self.choice.set_inner_html("");
 
         let mut label_links = Vec::new();
         for label in &passage.labels {
@@ -84,30 +108,55 @@ impl WasmRunner {
             label_elem.set_attribute("href", "#").unwrap();
 
             list_item.append_child(&label_elem).unwrap();
-            self.choice_elem.append_child(&list_item).unwrap();
+            self.choice.append_child(&list_item).unwrap();
             label_links.push(label_elem);
         }
 
         label_links
     }
 
-    async fn make_choice(&mut self, choices: &[Element]) -> usize {
-        let (tx, mut rx) = ::futures::channel::mpsc::channel(1);
+    async fn make_choice(&self, choices: &[Element]) -> usize {
+        let (tx, mut rx) = ::futures::channel::mpsc::unbounded();
 
+        let mut listeners = Vec::new();
         for (i, choice) in choices.iter().enumerate() {
-            let mut tx = tx.clone();
+            let tx = tx.clone();
             let listener = EventListener::once(&choice, "click", move |_event| {
-                let _ = tx.try_send(i);
+                let _ = tx.unbounded_send(i);
             });
-            self.choice_listeners.push(listener);
+            listeners.push(listener);
         }
 
         let index = async move {
             let index = rx.next().await.expect("choice should be made");
             drop(rx);
-            self.choice_listeners.clear();
+            listeners.clear();
             index
         };
         index.await
+    }
+
+    pub fn save(&self) {
+        let state = self.engine.state();
+        let Ok(Some(storage)) = self.window.local_storage() else {
+            return;
+        };
+        let Ok(json) = serde_json::to_string(state) else {
+            return;
+        };
+        let _ = storage.set_item("save", &json);
+    }
+
+    pub fn load(&mut self) {
+        let Ok(Some(storage)) = self.window.local_storage() else {
+            return;
+        };
+        let Ok(Some(json)) = storage.get_item("save") else {
+            return;
+        };
+        let Ok(state) = serde_json::from_str(&json) else {
+            return;
+        };
+        self.engine.load_state(state);
     }
 }

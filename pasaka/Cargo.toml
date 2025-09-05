@@ -3,19 +3,30 @@ name = "pasaka"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+wasm = [
+    "dep:web-sys",
+    "dep:wasm-bindgen",
+    "dep:gloo",
+    "dep:console_error_panic_hook",
+]
+
 [dependencies]
 console = "0.16.0"
-console_error_panic_hook = "0.1.7"
+console_error_panic_hook = { version = "0.1.7", optional = true }
 ctor = "0.5.0"
 dialoguer = "0.12.0"
 erased-serde = "0.4.6"
 futures = "0.3.31"
-gloo = { version = "0.11.0", features = ["events", "futures", "storage"] }
+gloo = { version = "0.11.0", features = [
+    "events",
+    "futures",
+    "storage",
+], optional = true }
 inventory = "0.3.21"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.143"
-typetag = "0.2.20"
-wasm-bindgen = "0.2.100"
+wasm-bindgen = { version = "0.2.100", optional = true }
 web-sys = { version = "0.3.77", features = [
     "Window",
     "Document",
@@ -24,8 +35,4 @@ web-sys = { version = "0.3.77", features = [
     "console",
     'HtmlElement',
     'Node',
-] }
-
-[dev-dependencies]
-fastrand = "2.3.0"
-smol = "2.0.2"
+], optional = true }

@@ -1,77 +1,101 @@
 use std::fs::File;
 
 use console::Term;
-use dialoguer::{Input, Select, theme::ColorfulTheme};
+use dialoguer::{Confirm, Input, Select, theme::ColorfulTheme};
 
 use crate::{
-    choice::{ChoiceResult, PassageResult},
+    choice::PassageResult,
     engine::{Engine, EngineState},
-    runner::{RenderResult, Runner},
 };
 
-pub struct CliRunner;
+pub struct CliRunner {
+    engine: Engine,
+}
 
-#[allow(refining_impl_trait)]
-impl Runner for CliRunner {
-    async fn render(
-        &mut self,
-        _engine: &mut Engine,
-        prev_text: &[String],
-        choice: PassageResult,
-    ) -> RenderResult {
-        Term::stdout().clear_screen().unwrap();
+impl CliRunner {
+    pub fn new(engine: Engine) -> Self {
+        Self { engine }
+    }
 
-        for line in prev_text {
+    pub fn run(&mut self) {
+        loop {
+            Term::stdout().clear_screen().unwrap();
+
+            let passage = self.engine.step();
+
+            self.show_text(&passage);
+
+            if self.make_choice(passage) {
+                break;
+            }
+        }
+    }
+
+    pub fn show_text(&self, passage: &PassageResult) {
+        for line in &passage.text {
             println!("{line}");
         }
-        if !prev_text.is_empty() {
+        if !passage.text.is_empty() {
             println!();
         }
+    }
 
-        for line in &choice.text {
-            println!("{line}");
-        }
-        if !choice.text.is_empty() {
-            println!();
-        }
-
-        if choice.labels.is_empty() {
-            return RenderResult::Exit;
-        }
-
-        let index: usize = loop {
+    pub fn make_choice(&mut self, passage: PassageResult) -> bool {
+        loop {
+            if passage.labels.is_empty() {
+                let conf = Confirm::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Exit game")
+                    .default(true)
+                    .report(false)
+                    .interact_opt()
+                    .unwrap();
+                match conf {
+                    Some(true) => return true,
+                    Some(false) => {}
+                    None => self.show_settings(),
+                }
+                continue;
+            }
             let opt = Select::with_theme(&ColorfulTheme::default())
                 .default(0)
-                .items(&choice.labels)
+                .items(&passage.labels)
                 .interact_opt()
                 .unwrap();
             match opt {
-                Some(index) => break index,
-                None => {
-                    let sl_choice = Select::with_theme(&ColorfulTheme::default())
-                        .with_prompt("Settings...")
-                        .report(false)
-                        .item("Save game")
-                        .item("Load game")
-                        .interact_opt()
-                        .unwrap();
-                    match sl_choice {
-                        Some(0) => return RenderResult::Save,
-                        Some(1) => return RenderResult::Load,
-                        _ => continue,
-                    }
+                Some(index) => {
+                    let result = (passage.action)(index);
+                    self.engine.update(result);
+                    break false;
                 }
+                None => self.show_settings(),
             }
-        };
-
-        let result: ChoiceResult = (choice.action)(index);
-
-        RenderResult::Choice(result)
+        }
     }
 
-    async fn save(&mut self, value: &EngineState) -> bool {
+    pub fn show_settings(&mut self) {
+        let sl_choice = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Settings...")
+            .report(false)
+            .item("Save game")
+            .item("Load game")
+            .interact_opt()
+            .unwrap();
+        match sl_choice {
+            Some(0) => {
+                self.save();
+            }
+            Some(1) => {
+                if let Some(state) = self.load() {
+                    self.engine.load_state(state);
+                }
+            }
+            _ => {}
+        };
+    }
+
+    fn save(&self) -> bool {
         let path: String = if let Ok(path) = Input::new()
-            .with_prompt("Save to file:")
+            .with_prompt("Save to file")
             .report(true)
             .interact_text()
         {
@@ -85,14 +109,14 @@ impl Runner for CliRunner {
             return false;
         };
 
-        let result = serde_json::to_writer(file, value);
+        let result = serde_json::to_writer(file, self.engine.state());
 
         result.is_ok()
     }
 
-    async fn load(&mut self) -> Option<EngineState> {
+    fn load(&mut self) -> Option<EngineState> {
         let path: String = Input::new()
-            .with_prompt("Load file:")
+            .with_prompt("Load from file")
             .interact_text()
             .ok()?;
         let file = File::open(path).ok()?;

@@ -44,9 +44,10 @@ pub fn start() {
 
     web_sys::console::log_1(&"Hello, WASM!".into());
 
-    wasm_bindgen_futures::spawn_local(Engine::run(
-        StartPoint,
-        GameState { count: 0 },
-        WasmRunner::new("text", "choices"),
-    ));
+    let engine = Engine::new(StartPoint, GameState { count: 0 });
+    let runner = Box::new(WasmRunner::new(engine, "text", "choices", "save", "load"));
+    // We never plan to drop this
+    let runner = Box::leak(runner);
+
+    wasm_bindgen_futures::spawn_local(runner.run());
 }

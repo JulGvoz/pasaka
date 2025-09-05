@@ -1,112 +1,162 @@
 use futures::StreamExt;
 use gloo::events::EventListener;
-use web_sys::Element;
+use web_sys::{Document, Element, Window};
 
-use crate::{
-    choice::PassageResult,
-    engine::{Engine, EngineState},
-    runner::{RenderResult, Runner},
-};
+use crate::{choice::PassageResult, engine::Engine};
 
 pub struct WasmRunner {
-    text_container_id: String,
-    choices_container_id: String,
+    engine: Engine,
+
+    window: Window,
+    document: Document,
+    text: Element,
+    choice: Element,
+    save: Option<Element>,
+    load: Option<Element>,
+
+    save_listener: Option<EventListener>,
+    load_listener: Option<EventListener>,
 }
 
 impl WasmRunner {
-    pub fn new(text_id: impl ToString, choices_id: impl ToString) -> Self {
-        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+    pub fn new(
+        engine: Engine,
+        text_id: impl ToString,
+        choices_id: impl ToString,
+        save_id: impl ToString,
+        load_id: impl ToString,
+    ) -> Self {
+        let window = web_sys::window().expect("no global `window` exists");
+        let document = window.document().expect("window should have a document");
+
+        let text = document
+            .get_element_by_id(&text_id.to_string())
+            .expect("no text container found");
+
+        let choice = document
+            .get_element_by_id(&choices_id.to_string())
+            .expect("no choice container found");
+
+        let save: Option<Element> = document.get_element_by_id(&save_id.to_string());
+        let load: Option<Element> = document.get_element_by_id(&load_id.to_string());
+
+        let save_listener = None;
+        let load_listener = None;
 
         Self {
-            text_container_id: text_id.to_string(),
-            choices_container_id: choices_id.to_string(),
+            engine,
+
+            window,
+            document,
+            text,
+            choice,
+            save,
+            load,
+
+            save_listener,
+            load_listener,
         }
     }
 
-    fn make_choice(&mut self, choices: &[Element]) -> impl std::future::Future<Output = usize> {
-        let (tx, mut rx) = ::futures::channel::mpsc::channel(1);
+    pub async fn run(&mut self) {
+        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-        let mut listeners = Vec::new();
-        for (i, choice) in choices.iter().enumerate() {
-            let mut tx = tx.clone();
-            let listener = EventListener::once(&choice, "click", move |_event| {
-                web_sys::console::log_1(&format!("make choice {i}").into());
-                let _ = tx.try_send(i);
+        if let Some(save) = &self.save {
+            let listener = EventListener::new(&save, "click", |_event: &web_sys::Event| {
+                // todo: data escapes
+                // self.save();
             });
-            listeners.push(listener);
+            self.save_listener = Some(listener)
+        }
+        if let Some(load) = &self.load {
+            let listener = EventListener::new(&load, "click", |_event| {
+                // todo
+                // self.load();
+            });
+            self.load_listener = Some(listener)
         }
 
-        async move {
-            web_sys::console::log_1(&"begin wait".into());
-            let index = rx.next().await.expect("choice should be made");
-            drop(rx);
-            web_sys::console::log_1(&format!("received choice {index}").into());
-            drop(listeners);
-            index
+        loop {
+            let passage = self.engine.step();
+
+            self.show_text(&passage);
+
+            let choices = self.show_choice(&passage);
+            let index = self.make_choice(&choices).await;
+            let result = (passage.action)(index);
+            self.engine.update(result);
         }
     }
-}
 
-#[allow(refining_impl_trait)]
-impl Runner for WasmRunner {
-    async fn render(
-        &mut self,
-        _engine: &mut Engine,
-        prev_text: &[String],
-        choice: PassageResult,
-    ) -> RenderResult {
-        web_sys::console::log_1(&"render passage".into());
-        let window = web_sys::window().expect("no global `window` exists");
-        let document = window.document().expect("document should have a body");
-
+    pub fn show_text(&self, passage: &PassageResult) {
         let mut text = String::new();
-        for line in prev_text {
+        for line in &passage.text {
             text.push_str(line);
             text.push_str("<br />");
         }
-        text.push_str("<br />");
-        for line in &choice.text {
-            text.push_str(line);
-            text.push_str("<br />");
-        }
-        text.push_str("<br />");
+        self.text.set_inner_html(&text);
+    }
 
-        let text_elem = document
-            .get_element_by_id(&self.text_container_id)
-            .expect("no text container found");
-        text_elem.set_inner_html(&text);
-
-        let choice_elem = document
-            .get_element_by_id(&self.choices_container_id)
-            .expect("no choice container found");
-        choice_elem.set_inner_html("");
-
-        if choice.labels.is_empty() {
-            return RenderResult::Exit;
-        }
+    pub fn show_choice(&self, passage: &PassageResult) -> Vec<Element> {
+        self.choice.set_inner_html("");
 
         let mut label_links = Vec::new();
-        for label in choice.labels {
-            let list_item = document.create_element("li").unwrap();
-            let label_elem = document.create_element("a").unwrap();
+        for label in &passage.labels {
+            let list_item = self.document.create_element("li").unwrap();
+            let label_elem = self.document.create_element("a").unwrap();
             label_elem.set_text_content(Some(&label));
             label_elem.set_attribute("href", "#").unwrap();
 
             list_item.append_child(&label_elem).unwrap();
-            choice_elem.append_child(&list_item).unwrap();
+            self.choice.append_child(&list_item).unwrap();
             label_links.push(label_elem);
         }
 
-        let index = self.make_choice(&label_links).await;
-
-        RenderResult::Choice((choice.action)(index))
+        label_links
     }
 
-    async fn save(&mut self, value: &EngineState) -> bool {
-        todo!()
+    async fn make_choice(&self, choices: &[Element]) -> usize {
+        let (tx, mut rx) = ::futures::channel::mpsc::unbounded();
+
+        let mut listeners = Vec::new();
+        for (i, choice) in choices.iter().enumerate() {
+            let tx = tx.clone();
+            let listener = EventListener::once(&choice, "click", move |_event| {
+                let _ = tx.unbounded_send(i);
+            });
+            listeners.push(listener);
+        }
+
+        let index = async move {
+            let index = rx.next().await.expect("choice should be made");
+            drop(rx);
+            listeners.clear();
+            index
+        };
+        index.await
     }
 
-    async fn load(&mut self) -> Option<EngineState> {
-        todo!()
+    pub fn save(&self) {
+        let state = self.engine.state();
+        let Ok(Some(storage)) = self.window.local_storage() else {
+            return;
+        };
+        let Ok(json) = serde_json::to_string(state) else {
+            return;
+        };
+        let _ = storage.set_item("save", &json);
+    }
+
+    pub fn load(&mut self) {
+        let Ok(Some(storage)) = self.window.local_storage() else {
+            return;
+        };
+        let Ok(Some(json)) = storage.get_item("save") else {
+            return;
+        };
+        let Ok(state) = serde_json::from_str(&json) else {
+            return;
+        };
+        self.engine.load_state(state);
     }
 }

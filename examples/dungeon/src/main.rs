@@ -3,14 +3,15 @@ use pasaka::{engine::Engine, runner::cli::CliRunner};
 use crate::game::{Caverns, GameState};
 
 fn main() {
-    smol::block_on(Engine::run(
+    let engine = Engine::new(
         Caverns,
         GameState {
             gold: 0,
             monster: true,
         },
-        CliRunner,
-    ))
+    );
+
+    CliRunner::new(engine).run();
 }
 
 mod combat {

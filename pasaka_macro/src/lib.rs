@@ -25,18 +25,18 @@ pub fn passage(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let register_fn = format_ident!("__register_passage_{}", name);
 
     let expanded = quote! {
-        #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
+        #[derive(::std::fmt::Debug, ::std::marker::Copy, ::std::clone::Clone, ::serde::Serialize, ::serde::Deserialize)]
         #vis struct #name;
 
-        impl pasaka::PassageImpl for #name {
+        impl ::pasaka::PassageImpl for self::#name {
             type State = #state_ty;
 
             fn run(&self, #engine_arg, #state_arg) #output {
                 #block
             }
 
-            fn box_clone(&self) -> Box<dyn pasaka::PassageImpl<State = Self::State>> {
-                Box::new(self.clone())
+            fn box_clone(&self) -> ::std::boxed::Box<dyn ::pasaka::PassageImpl<State = Self::State>> {
+                ::std::boxed::Box::new(::std::clone::Clone::clone(self))
             }
 
             fn name(&self) -> &'static str {
@@ -47,7 +47,7 @@ pub fn passage(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #[allow(non_snake_case)]
         #[ctor::ctor]
         fn #register_fn() {
-            pasaka::register_passage(stringify! (#name), #name);
+            ::pasaka::register_passage(stringify! (#name), #name);
         }
     };
     expanded.into()

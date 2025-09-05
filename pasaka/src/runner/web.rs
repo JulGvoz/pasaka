@@ -12,6 +12,12 @@ pub struct WebRunnerProps {
     start_passage: Passage,
 }
 
+impl WebRunnerProps {
+    pub fn new(start_passage: Passage) -> Self {
+        Self { start_passage }
+    }
+}
+
 pub enum Msg {
     Choice(usize),
     Save,

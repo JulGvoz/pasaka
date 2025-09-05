@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    Passage, PassageImpl,
+    Passage,
     choice::{ChoiceResult, PassageHandle, PassageResult},
 };
 

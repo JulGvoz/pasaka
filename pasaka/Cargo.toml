@@ -8,7 +8,10 @@ wasm = [
     "dep:web-sys",
     "dep:wasm-bindgen",
     "dep:gloo",
+    "dep:gloo-storage",
+    "dep:yew",
     "dep:console_error_panic_hook",
+    "dep:uuid",
 ]
 
 [dependencies]
@@ -23,16 +26,18 @@ gloo = { version = "0.11.0", features = [
     "futures",
     "storage",
 ], optional = true }
-inventory = "0.3.21"
+gloo-storage = { version = "0.3.0", optional = true }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.143"
-wasm-bindgen = { version = "0.2.100", optional = true }
-web-sys = { version = "0.3.77", features = [
+uuid = { version = "1.18.1", features = ["js", "v4"], optional = true }
+wasm-bindgen = { version = "0.2.101", optional = true }
+web-sys = { version = "0.3.78", features = [
     "Window",
     "Document",
     "Element",
     "Storage",
     "console",
-    'HtmlElement',
-    'Node',
+    "HtmlElement",
+    "Node",
 ], optional = true }
+yew = { version = "0.21.0", optional = true }

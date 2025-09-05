@@ -1,9 +1,9 @@
-use crate::{PassageImpl, Passage};
+use crate::{Passage, PassageImpl};
 
 pub struct PassageResult {
-    pub(crate) text: Vec<String>,
-    pub(crate) labels: Vec<String>,
-    pub(crate) action: Box<dyn FnOnce(usize) -> ChoiceResult>,
+    pub text: Vec<String>,
+    pub labels: Vec<String>,
+    pub action: Box<dyn FnOnce(usize) -> ChoiceResult>,
 }
 
 pub struct PassageHandle {

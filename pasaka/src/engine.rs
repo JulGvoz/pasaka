@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    Passage, PassageImpl,
+    Passage,
     choice::{ChoiceResult, PassageHandle, PassageResult},
 };
 
@@ -16,16 +16,16 @@ pub struct EngineState {
 }
 
 impl Engine {
-    pub fn new<P: PassageImpl>(passage: P, state: P::State) -> Self {
+    pub fn new(passage: Passage) -> Self {
         Engine {
             state: EngineState {
                 prev_text: Vec::new(),
-                passage: passage.with_state(state),
+                passage: passage,
             },
         }
     }
 
-    pub fn step(&mut self) -> PassageResult {
+    pub fn step(&self) -> PassageResult {
         let handle = PassageHandle {
             text_buffer: self.state.prev_text.clone(),
         };

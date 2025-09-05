@@ -46,7 +46,7 @@ fn passage_to_fn<P: PassageImpl + Send + Sync>(p: P) -> BoxedPassage {
     })
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, PartialEq)]
 pub struct Passage {
     state: serde_json::Value,
     fn_name: String,

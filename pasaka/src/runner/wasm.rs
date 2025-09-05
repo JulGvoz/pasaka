@@ -1,118 +1,113 @@
 use futures::StreamExt;
 use gloo::events::EventListener;
-use web_sys::Element;
+use web_sys::{Document, Element};
 
-use crate::{
-    choice::PassageResult,
-    engine::{Engine, EngineState},
-    runner::{RenderResult, Runner},
-};
+use crate::{choice::PassageResult, engine::Engine};
 
 pub struct WasmRunner {
-    text_container_id: String,
-    choices_container_id: String,
-    save_button_id: String,
-    load_button_id: String,
+    engine: Engine,
+
+    text_elem: Element,
+    choice_elem: Element,
+    save_id: String,
+    load_id: String,
+
+    document: Document,
+
+    choice_listeners: Vec<EventListener>,
 }
 
 impl WasmRunner {
     pub fn new(
+        engine: Engine,
         text_id: impl ToString,
         choices_id: impl ToString,
         save_id: impl ToString,
         load_id: impl ToString,
     ) -> Self {
-        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+        let window = web_sys::window().expect("no global `window` exists");
+        let document = window.document().expect("document should have a body");
+
+        let text_elem = document
+            .get_element_by_id(&text_id.to_string())
+            .expect("no text container found");
+
+        let choice_elem = document
+            .get_element_by_id(&choices_id.to_string())
+            .expect("no choice container found");
 
         Self {
-            text_container_id: text_id.to_string(),
-            choices_container_id: choices_id.to_string(),
-            save_button_id: save_id.to_string(),
-            load_button_id: load_id.to_string(),
+            engine,
+            text_elem,
+            choice_elem,
+            save_id: save_id.to_string(),
+            load_id: load_id.to_string(),
+
+            document,
+
+            choice_listeners: Vec::new(),
         }
     }
 
-    fn make_choice(&mut self, choices: &[Element]) -> impl std::future::Future<Output = usize> {
+    pub async fn run(&mut self) {
+        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
+        loop {
+            let passage = self.engine.step();
+
+            self.show_text(&passage);
+
+            let choices = self.show_choice(&passage);
+            let index = self.make_choice(&choices).await;
+            let result = (passage.action)(index);
+            self.engine.update(result);
+        }
+    }
+
+    pub fn show_text(&self, passage: &PassageResult) {
+        let mut text = String::new();
+        for line in &passage.text {
+            text.push_str(line);
+            text.push_str("<br />");
+        }
+        self.text_elem.set_inner_html(&text);
+    }
+
+    pub fn show_choice(&self, passage: &PassageResult) -> Vec<Element> {
+        self.choice_elem.set_inner_html("");
+
+        let mut label_links = Vec::new();
+        for label in &passage.labels {
+            let list_item = self.document.create_element("li").unwrap();
+            let label_elem = self.document.create_element("a").unwrap();
+            label_elem.set_text_content(Some(&label));
+            label_elem.set_attribute("href", "#").unwrap();
+
+            list_item.append_child(&label_elem).unwrap();
+            self.choice_elem.append_child(&list_item).unwrap();
+            label_links.push(label_elem);
+        }
+
+        label_links
+    }
+
+    async fn make_choice(&mut self, choices: &[Element]) -> usize {
         let (tx, mut rx) = ::futures::channel::mpsc::channel(1);
 
-        let mut listeners = Vec::new();
         for (i, choice) in choices.iter().enumerate() {
             let mut tx = tx.clone();
             let listener = EventListener::once(&choice, "click", move |_event| {
                 let _ = tx.try_send(i);
             });
-            listeners.push(listener);
+            self.choice_listeners.push(listener);
         }
 
-        async move {
+        let index = async move {
             let index = rx.next().await.expect("choice should be made");
             drop(rx);
-            drop(listeners);
+            self.choice_listeners.clear();
             index
-        }
-    }
-}
-
-#[allow(refining_impl_trait)]
-impl Runner for WasmRunner {
-    async fn render(
-        &mut self,
-        _engine: &mut Engine,
-        prev_text: &[String],
-        choice: PassageResult,
-    ) -> RenderResult {
-        let window = web_sys::window().expect("no global `window` exists");
-        let document = window.document().expect("document should have a body");
-
-        let mut text = String::new();
-        for line in prev_text {
-            text.push_str(line);
-            text.push_str("<br />");
-        }
-        text.push_str("<br />");
-        for line in &choice.text {
-            text.push_str(line);
-            text.push_str("<br />");
-        }
-        text.push_str("<br />");
-
-        let text_elem = document
-            .get_element_by_id(&self.text_container_id)
-            .expect("no text container found");
-        text_elem.set_inner_html(&text);
-
-        let choice_elem = document
-            .get_element_by_id(&self.choices_container_id)
-            .expect("no choice container found");
-        // Clear old choices
-        choice_elem.set_inner_html("");
-
-        if choice.labels.is_empty() {
-            return RenderResult::Exit;
-        }
-
-        let mut label_links = Vec::new();
-        for label in choice.labels {
-            let list_item = document.create_element("li").unwrap();
-            let label_elem = document.create_element("a").unwrap();
-            label_elem.set_text_content(Some(&label));
-            label_elem.set_attribute("href", "#").unwrap();
-
-            list_item.append_child(&label_elem).unwrap();
-            choice_elem.append_child(&list_item).unwrap();
-            label_links.push(label_elem);
-        }
-
-        let index = self.make_choice(&label_links).await;
-
-        RenderResult::Choice((choice.action)(index))
-    }
-
-    async fn save(&mut self, value: &EngineState) -> bool {
-        todo!()
-    }
-
-    async fn load(&mut self) -> Option<EngineState> {
-        todo!()
+        };
+        index.await
     }
 }

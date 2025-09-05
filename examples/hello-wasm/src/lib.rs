@@ -47,6 +47,6 @@ pub fn start() {
     wasm_bindgen_futures::spawn_local(Engine::run(
         StartPoint,
         GameState { count: 0 },
-        WasmRunner::new("text", "choices"),
+        WasmRunner::new("text", "choices", "save", "load"),
     ));
 }

@@ -11,15 +11,24 @@ use crate::{
 pub struct WasmRunner {
     text_container_id: String,
     choices_container_id: String,
+    save_button_id: String,
+    load_button_id: String,
 }
 
 impl WasmRunner {
-    pub fn new(text_id: impl ToString, choices_id: impl ToString) -> Self {
+    pub fn new(
+        text_id: impl ToString,
+        choices_id: impl ToString,
+        save_id: impl ToString,
+        load_id: impl ToString,
+    ) -> Self {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
         Self {
             text_container_id: text_id.to_string(),
             choices_container_id: choices_id.to_string(),
+            save_button_id: save_id.to_string(),
+            load_button_id: load_id.to_string(),
         }
     }
 
@@ -75,6 +84,7 @@ impl Runner for WasmRunner {
         let choice_elem = document
             .get_element_by_id(&self.choices_container_id)
             .expect("no choice container found");
+        // Clear old choices
         choice_elem.set_inner_html("");
 
         if choice.labels.is_empty() {

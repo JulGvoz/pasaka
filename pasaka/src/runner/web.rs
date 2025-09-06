@@ -22,6 +22,8 @@ pub enum Msg {
     Choice(usize),
     Save,
     Load,
+    Undo,
+    Redo,
 }
 
 impl Component for WebRunner {
@@ -37,7 +39,10 @@ impl Component for WebRunner {
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::Choice(i) => self.engine.update(i),
+            Msg::Choice(i) => {
+                self.engine.update(i);
+                true
+            }
             Msg::Save => {
                 let state = self.engine.state().clone();
                 let _ = LocalStorage::set("save", state);
@@ -48,7 +53,14 @@ impl Component for WebRunner {
                     return false;
                 };
                 self.engine.load_state(state);
-
+                true
+            }
+            Msg::Undo => {
+                self.engine.undo();
+                true
+            }
+            Msg::Redo => {
+                self.engine.redo();
                 true
             }
         }
@@ -83,6 +95,8 @@ impl Component for WebRunner {
 
         let save = ctx.link().callback(|_| Msg::Save);
         let load = ctx.link().callback(|_| Msg::Load);
+        let undo = ctx.link().callback(|_| Msg::Undo);
+        let redo = ctx.link().callback(|_| Msg::Redo);
 
         html! {
             <>
@@ -97,6 +111,11 @@ impl Component for WebRunner {
             <hr />
             <p><a href="javascript:void(0)" onclick={save}>{"Save"}</a></p>
             <p><a href="javascript:void(0)" onclick={load}>{"Load"}</a></p>
+            <p>
+                <a href="javascript:void(0)" onclick={undo}>{"Undo"}</a>
+                {"|"}
+                <a href="javascript:void(0)" onclick={redo}>{"Redo"}</a>
+            </p>
             </>
         }
     }

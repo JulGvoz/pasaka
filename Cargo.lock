@@ -930,6 +930,7 @@ dependencies = [
  "futures",
  "gloo 0.11.0",
  "gloo-storage 0.3.0",
+ "replace_with",
  "serde",
  "serde_json",
  "uuid",
@@ -1083,6 +1084,12 @@ name = "r-efi"
 version = "5.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
+
+[[package]]
+name = "replace_with"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "51743d3e274e2b18df81c4dc6caf8a5b8e15dbe799e0dca05c7617380094e884"
 
 [[package]]
 name = "rustc-demangle"

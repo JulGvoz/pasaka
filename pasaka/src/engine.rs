@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     Passage,
-    choice::{PassageHandle, PassageResult},
+    choice::{ChoiceResult, PassageHandle, PassageResult},
 };
 
 pub struct Engine {
@@ -12,27 +12,50 @@ pub struct Engine {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EngineState {
+    history: Vec<StateEntry>,
+    history_index: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct StateEntry {
     prev_text: Vec<String>,
     passage: Passage,
 }
 
 impl EngineState {
     pub fn evaluate(&self) -> PassageResult {
+        let entry = &self.history[self.history_index];
         let handle = PassageHandle {
-            text_buffer: self.prev_text.clone(),
+            text_buffer: entry.prev_text.clone(),
         };
 
-        let passage = self.passage.clone();
+        let passage = entry.passage.clone();
 
         passage.run(handle)
+    }
+
+    fn push(&mut self, choice: ChoiceResult) {
+        // clear redo
+        self.history.truncate(self.history_index + 1);
+
+        let entry = StateEntry {
+            prev_text: choice.handle.text_buffer,
+            passage: choice.next_passage,
+        };
+        self.history_index = self.history.len();
+        self.history.push(entry);
     }
 }
 
 impl Engine {
     pub fn new(passage: Passage) -> Self {
-        let state = EngineState {
+        let entry = StateEntry {
             prev_text: Vec::new(),
             passage: passage,
+        };
+        let state = EngineState {
+            history: vec![entry],
+            history_index: 0,
         };
         let current = state.evaluate();
         Engine { state, current }
@@ -43,20 +66,15 @@ impl Engine {
     }
 
     pub fn update(&mut self, choice_index: usize) -> bool {
-        if choice_index >= self.current.labels.len() {
-            return false;
-        }
-        // SAFETY: self.current is written back to before leaving this scope
-        // furthermore, self is not used anywhere in the next 4 lines
-        let current = unsafe { std::ptr::read(&self.current) };
+        assert!(choice_index < self.current.labels.len());
 
-        let choice = (current.action)(choice_index);
+        replace_with::replace_with_or_abort(&mut self.current, |current| {
+            let choice = (current.action)(choice_index);
 
-        self.state.prev_text = choice.handle.text_buffer;
-        self.state.passage = choice.next_passage;
+            self.state.push(choice);
 
-        // SAFETY: &mut is always safe to write to.
-        unsafe { std::ptr::write(&mut self.current, self.state.evaluate()) };
+            self.state.evaluate()
+        });
 
         true
     }

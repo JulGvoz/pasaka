@@ -2,11 +2,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     Passage,
-    choice::{ChoiceResult, PassageHandle, PassageResult},
+    choice::{PassageHandle, PassageResult},
 };
 
 pub struct Engine {
     state: EngineState,
+    current: PassageResult,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -15,29 +16,49 @@ pub struct EngineState {
     passage: Passage,
 }
 
-impl Engine {
-    pub fn new(passage: Passage) -> Self {
-        Engine {
-            state: EngineState {
-                prev_text: Vec::new(),
-                passage: passage,
-            },
-        }
-    }
-
-    pub fn step(&self) -> PassageResult {
+impl EngineState {
+    pub fn evaluate(&self) -> PassageResult {
         let handle = PassageHandle {
-            text_buffer: self.state.prev_text.clone(),
+            text_buffer: self.prev_text.clone(),
         };
 
-        let passage = self.state.passage.clone();
+        let passage = self.passage.clone();
 
         passage.run(handle)
     }
+}
 
-    pub fn update(&mut self, choice_result: ChoiceResult) {
-        self.state.prev_text = choice_result.handle.text_buffer;
-        self.state.passage = choice_result.next_passage;
+impl Engine {
+    pub fn new(passage: Passage) -> Self {
+        let state = EngineState {
+            prev_text: Vec::new(),
+            passage: passage,
+        };
+        let current = state.evaluate();
+        Engine { state, current }
+    }
+
+    pub fn current(&self) -> &PassageResult {
+        &self.current
+    }
+
+    pub fn update(&mut self, choice_index: usize) -> bool {
+        if choice_index >= self.current.labels.len() {
+            return false;
+        }
+        // SAFETY: self.current is written back to before leaving this scope
+        // furthermore, self is not used anywhere in the next 4 lines
+        let current = unsafe { std::ptr::read(&self.current) };
+
+        let choice = (current.action)(choice_index);
+
+        self.state.prev_text = choice.handle.text_buffer;
+        self.state.passage = choice.next_passage;
+
+        // SAFETY: &mut is always safe to write to.
+        unsafe { std::ptr::write(&mut self.current, self.state.evaluate()) };
+
+        true
     }
 
     pub fn state(&self) -> &EngineState {
@@ -46,5 +67,6 @@ impl Engine {
 
     pub fn load_state(&mut self, state: EngineState) {
         self.state = state;
+        self.current = self.state.evaluate();
     }
 }

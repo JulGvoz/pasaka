@@ -1,11 +1,10 @@
 use gloo_storage::{LocalStorage, Storage};
 use yew::prelude::*;
 
-use crate::{Passage, choice::PassageResult, engine::Engine};
+use crate::{Passage, engine::Engine};
 
 pub struct WebRunner {
     engine: Engine,
-    current: PassageResult,
 }
 
 #[derive(Properties, PartialEq)]
@@ -33,25 +32,12 @@ impl Component for WebRunner {
     fn create(ctx: &Context<Self>) -> Self {
         let passage = ctx.props().start_passage.clone();
         let engine = Engine::new(passage);
-        let current = engine.step();
-        Self { engine, current }
+        Self { engine }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::Choice(i) => {
-                if i >= self.current.labels.len() {
-                    return false;
-                }
-                // SAFETY: self.current is written back to before leaving this scope
-                // furthermore, self is not used anywhere in the next 3 lines
-                let current = unsafe { std::ptr::read(&self.current) };
-                let choice = (current.action)(i);
-                self.engine.update(choice);
-                // SAFETY: &mut is always safe to write to.
-                unsafe { std::ptr::write(&mut self.current, self.engine.step()) };
-                true
-            }
+            Msg::Choice(i) => self.engine.update(i),
             Msg::Save => {
                 let state = self.engine.state().clone();
                 let _ = LocalStorage::set("save", state);
@@ -62,7 +48,6 @@ impl Component for WebRunner {
                     return false;
                 };
                 self.engine.load_state(state);
-                self.current = self.engine.step();
 
                 true
             }
@@ -71,7 +56,8 @@ impl Component for WebRunner {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let text: Html = self
-            .current
+            .engine
+            .current()
             .text
             .iter()
             .map(|line| {
@@ -82,7 +68,8 @@ impl Component for WebRunner {
             .collect();
 
         let choices: Html = self
-            .current
+            .engine
+            .current()
             .labels
             .iter()
             .enumerate()

@@ -21,11 +21,9 @@ impl CliRunner {
         loop {
             Term::stdout().clear_screen().unwrap();
 
-            let passage = self.engine.step();
+            self.show_text(self.engine.current());
 
-            self.show_text(&passage);
-
-            if self.make_choice(passage) {
+            if self.make_choice() {
                 break;
             }
         }
@@ -40,7 +38,8 @@ impl CliRunner {
         }
     }
 
-    pub fn make_choice(&mut self, passage: PassageResult) -> bool {
+    pub fn make_choice(&mut self) -> bool {
+        let passage = self.engine.current();
         loop {
             if passage.labels.is_empty() {
                 let conf = Confirm::with_theme(&ColorfulTheme::default())
@@ -63,8 +62,7 @@ impl CliRunner {
                 .unwrap();
             match opt {
                 Some(index) => {
-                    let result = (passage.action)(index);
-                    self.engine.update(result);
+                    self.engine.update(index);
                     break false;
                 }
                 None => self.show_settings(),

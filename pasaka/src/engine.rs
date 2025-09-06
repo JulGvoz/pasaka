@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -8,11 +10,12 @@ use crate::{
 pub struct Engine {
     state: EngineState,
     current: PassageResult,
+    history_limit: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EngineState {
-    history: Vec<StateEntry>,
+    history: VecDeque<StateEntry>,
     history_index: usize,
 }
 
@@ -36,7 +39,7 @@ impl EngineState {
     }
 
     #[must_use]
-    fn push(&mut self, choice: ChoiceResult) -> PassageResult {
+    fn push(&mut self, choice: ChoiceResult, limit: usize) -> PassageResult {
         // clear redo
         self.history.truncate(self.history_index + 1);
 
@@ -45,7 +48,12 @@ impl EngineState {
             passage: choice.next_passage,
         };
         self.history_index = self.history.len();
-        self.history.push(entry);
+        self.history.push_back(entry);
+
+        while self.history.len() > limit {
+            self.history.pop_front();
+            self.history_index -= 1;
+        }
 
         self.evaluate()
     }
@@ -60,7 +68,7 @@ impl EngineState {
     #[must_use]
     pub fn redo(&mut self) -> PassageResult {
         self.history_index += 1;
-        self.history_index = self.history_index.max(self.history.len() - 1);
+        self.history_index = self.history_index.min(self.history.len() - 1);
 
         self.evaluate()
     }
@@ -73,11 +81,15 @@ impl Engine {
             passage: passage,
         };
         let state = EngineState {
-            history: vec![entry],
+            history: VecDeque::from_iter(vec![entry]),
             history_index: 0,
         };
         let current = state.evaluate();
-        Engine { state, current }
+        Engine {
+            state,
+            current,
+            history_limit: 40,
+        }
     }
 
     pub fn current(&self) -> &PassageResult {
@@ -90,7 +102,7 @@ impl Engine {
         replace_with::replace_with_or_abort(&mut self.current, |current| {
             let choice = (current.action)(choice_index);
 
-            self.state.push(choice)
+            self.state.push(choice, self.history_limit)
         });
     }
 

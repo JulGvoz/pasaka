@@ -20,7 +20,7 @@ pub fn StartPoint(mut h: PassageHandle, state: GameState) -> PassageResult {
             state.count += 1;
             h.passage(StartPoint, state)
         })
-        .option("Decrease", |mut state: GameState, h| {
+        .option("Decrease", |mut state, h| {
             state.count -= 1;
             h.passage(StartPoint, state)
         })

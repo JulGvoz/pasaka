@@ -39,9 +39,8 @@ impl CliRunner {
     }
 
     pub fn make_choice(&mut self) -> bool {
-        let passage = self.engine.current();
         loop {
-            if passage.labels.is_empty() {
+            if self.engine.current().labels.is_empty() {
                 let conf = Confirm::with_theme(&ColorfulTheme::default())
                     .with_prompt("Exit game")
                     .default(true)
@@ -51,13 +50,17 @@ impl CliRunner {
                 match conf {
                     Some(true) => return true,
                     Some(false) => {}
-                    None => self.show_settings(),
+                    None => {
+                        if self.show_settings() {
+                            return false;
+                        }
+                    }
                 }
                 continue;
             }
             let opt = Select::with_theme(&ColorfulTheme::default())
                 .default(0)
-                .items(&passage.labels)
+                .items(&self.engine.current().labels)
                 .interact_opt()
                 .unwrap();
             match opt {
@@ -65,12 +68,16 @@ impl CliRunner {
                     self.engine.update(index);
                     break false;
                 }
-                None => self.show_settings(),
+                None => {
+                    if self.show_settings() {
+                        return false;
+                    }
+                }
             }
         }
     }
 
-    pub fn show_settings(&mut self) {
+    pub fn show_settings(&mut self) -> bool {
         let sl_choice = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Settings...")
             .report(false)
@@ -85,10 +92,12 @@ impl CliRunner {
             Some(1) => {
                 if let Some(state) = self.load() {
                     self.engine.load_state(state);
+                    return true;
                 }
             }
             _ => {}
         };
+        true
     }
 
     fn save(&self) -> bool {

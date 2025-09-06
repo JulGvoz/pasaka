@@ -77,14 +77,13 @@ impl WasmRunner {
         }
 
         loop {
-            let passage = self.engine.step();
+            let passage = self.engine.current();
 
-            self.show_text(&passage);
+            self.show_text(passage);
 
             let choices = self.show_choice(&passage);
             let index = self.make_choice(&choices).await;
-            let result = (passage.action)(index);
-            self.engine.update(result);
+            self.engine.update(index);
         }
     }
 

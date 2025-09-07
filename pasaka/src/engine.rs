@@ -156,9 +156,14 @@ mod tests {
     use crate::{engine::ENGINE_HISTORY_LIMIT, *};
 
     #[passage]
-    fn Counter(h: PassageHandle, count: usize) -> PassageResult {
+    fn Counter(mut h: PassageHandle, count: usize) -> PassageResult {
+        h.text(format!("{count}"));
+
         h.choice()
-            .option("", |h, count| h.passage(Counter, count + 1))
+            .option("+1", |mut h, count| {
+                h.text("+");
+                h.passage(Counter, count + 1)
+            })
             .build(count)
     }
 
@@ -170,6 +175,8 @@ mod tests {
         engine.update(0);
         let state: usize = engine.state.current_entry().passage.state().unwrap();
         assert_eq!(state, 3);
+        assert_eq!(engine.current.labels, vec!["+1"]);
+        assert_eq!(engine.current.text, vec!["+", "3"]);
     }
 
     #[test]
@@ -199,31 +206,40 @@ mod tests {
     #[test]
     fn undo_max() {
         let mut engine = Engine::new(Counter.with_state(0));
+        assert!(!engine.state.can_undo());
         engine.update(0);
+        assert!(engine.state.can_undo());
         engine.update(0);
         engine.update(0);
         engine.undo();
         engine.undo();
+        assert!(engine.state.can_undo());
         engine.undo();
         engine.undo();
         let state: usize = engine.state.current_entry().passage.state().unwrap();
         assert_eq!(state, 0);
+        assert!(!engine.state.can_undo());
     }
 
     #[test]
     fn undo_then_redo_max() {
         let mut engine = Engine::new(Counter.with_state(0));
+        assert!(!engine.state.can_redo());
         engine.update(0);
         engine.update(0);
         engine.update(0);
+        assert!(!engine.state.can_redo());
         engine.undo();
+        assert!(engine.state.can_redo());
         engine.undo();
         engine.redo();
+        assert!(engine.state.can_redo());
         engine.redo();
         engine.redo();
         engine.redo();
         let state: usize = engine.state.current_entry().passage.state().unwrap();
         assert_eq!(state, 3);
+        assert!(!engine.state.can_redo());
     }
 
     #[test]
@@ -239,5 +255,20 @@ mod tests {
 
         let state: usize = engine.state.current_entry().passage.state().unwrap();
         assert_eq!(state, 200 - ENGINE_HISTORY_LIMIT);
+    }
+
+    #[test]
+    fn save_then_load() {
+        let mut engine = Engine::new(Counter.with_state(0));
+        engine.update(0);
+        engine.update(0);
+        let saved_state = engine.state().clone();
+        engine.update(0);
+        let state: usize = engine.state.current_entry().passage.state().unwrap();
+        assert_eq!(state, 3);
+
+        engine.load_state(saved_state);
+        let state: usize = engine.state.current_entry().passage.state().unwrap();
+        assert_eq!(state, 2);
     }
 }

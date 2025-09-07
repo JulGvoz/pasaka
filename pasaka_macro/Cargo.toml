@@ -2,6 +2,9 @@
 name = "pasaka_macro"
 version = "0.1.0"
 edition = "2024"
+description = "#[passage] macro for pasaka"
+keywords = ["macro"]
+license = "UNLICENSED"
 
 [lib]
 proc-macro = true

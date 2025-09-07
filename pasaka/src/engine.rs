@@ -27,6 +27,12 @@ struct StateEntry {
 
 impl EngineState {
     #[must_use]
+    #[cfg(test)]
+    fn current_entry(&self) -> &StateEntry {
+        &self.history[self.history_index]
+    }
+
+    #[must_use]
     pub fn evaluate(&self) -> PassageResult {
         let entry = &self.history[self.history_index];
         let handle = PassageHandle {
@@ -144,5 +150,69 @@ mod tests {
         h.choice()
             .option("", |h, count| h.passage(Counter, count + 1))
             .build(count)
+    }
+
+    #[test]
+    fn run_example() {
+        let mut engine = Engine::new(Counter.with_state(0));
+        engine.update(0);
+        engine.update(0);
+        engine.update(0);
+        let state: usize = engine.state.current_entry().passage.state().unwrap();
+        assert_eq!(state, 3);
+    }
+
+    #[test]
+    fn undo() {
+        let mut engine = Engine::new(Counter.with_state(0));
+        engine.update(0);
+        engine.update(0);
+        engine.update(0);
+        engine.undo();
+        let state: usize = engine.state.current_entry().passage.state().unwrap();
+        assert_eq!(state, 2);
+    }
+
+    #[test]
+    fn undo_then_redo() {
+        let mut engine = Engine::new(Counter.with_state(0));
+        engine.update(0);
+        engine.update(0);
+        engine.update(0);
+        engine.undo();
+        engine.undo();
+        engine.redo();
+        let state: usize = engine.state.current_entry().passage.state().unwrap();
+        assert_eq!(state, 2);
+    }
+
+    #[test]
+    fn undo_max() {
+        let mut engine = Engine::new(Counter.with_state(0));
+        engine.update(0);
+        engine.update(0);
+        engine.update(0);
+        engine.undo();
+        engine.undo();
+        engine.undo();
+        engine.undo();
+        let state: usize = engine.state.current_entry().passage.state().unwrap();
+        assert_eq!(state, 0);
+    }
+
+    #[test]
+    fn undo_then_redo_max() {
+        let mut engine = Engine::new(Counter.with_state(0));
+        engine.update(0);
+        engine.update(0);
+        engine.update(0);
+        engine.undo();
+        engine.undo();
+        engine.redo();
+        engine.redo();
+        engine.redo();
+        engine.redo();
+        let state: usize = engine.state.current_entry().passage.state().unwrap();
+        assert_eq!(state, 3);
     }
 }

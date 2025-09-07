@@ -77,6 +77,10 @@ impl Passage {
 
         f(h, self.state)
     }
+
+    pub fn state<S: for<'a> serde::Deserialize<'a>>(&self) -> Option<S> {
+        serde_json::from_value(self.state.clone()).ok()
+    }
 }
 
 type BoxedPassage = Box<dyn Fn(PassageHandle, serde_json::Value) -> PassageResult + Send + Sync>;

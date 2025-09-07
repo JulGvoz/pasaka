@@ -47,11 +47,13 @@ where
     fn with_state(&self, state: Self::State) -> Passage {
         Passage {
             state: serde_json::to_value(state).unwrap(),
-            fn_name: self.name().to_string(),
+            registry_key: format!("{}::{}", self.module_path(), self.name()),
         }
     }
 
     fn name(&self) -> &'static str;
+
+    fn module_path(&self) -> &'static str;
 }
 
 /// Combination of a passage name together with its state.
@@ -60,7 +62,7 @@ where
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, PartialEq)]
 pub struct Passage {
     state: serde_json::Value,
-    fn_name: String,
+    registry_key: String,
 }
 
 impl Passage {
@@ -68,9 +70,10 @@ impl Passage {
         let guard = PASSAGE_REGISTRY
             .lock()
             .expect("accessing passage registry should not panic");
-        let f = guard
-            .get(&self.fn_name)
-            .expect("passage should be registered using #[passage]");
+        let f = guard.get(&self.registry_key).expect(&format!(
+            "passage {} should be registered using #[passage]",
+            self.registry_key
+        ));
 
         f(h, self.state)
     }
@@ -84,12 +87,12 @@ static PASSAGE_REGISTRY: LazyLock<Mutex<HashMap<String, BoxedPassage>>> =
 /// Register passage to the global registry.
 /// You should not call this function,
 /// as the [`#[passage]`](passage) macro calls it for you.
-pub fn register_passage<P: PassageImpl + Send + Sync>(name: &'static str, passage: P) {
+pub fn register_passage<P: PassageImpl + Send + Sync>(passage: P) {
     PASSAGE_REGISTRY
         .lock()
         .expect("registering passage registry should not panic")
         .insert(
-            name.to_string(),
+            format!("{}::{}", passage.module_path(), passage.name()),
             Box::new(move |h, value| {
                 let state: P::State = serde_json::from_value(value)
                     .expect("deserialized value should match passage state");

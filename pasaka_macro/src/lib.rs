@@ -42,12 +42,16 @@ pub fn passage(_attr: TokenStream, item: TokenStream) -> TokenStream {
             fn name(&self) -> &'static str {
                 stringify! (#name)
             }
+
+            fn module_path(&self) -> &'static str {
+                module_path!()
+            }
         }
 
         #[allow(non_snake_case)]
         #[::pasaka::macro_support::ctor::ctor(crate_path=::pasaka::macro_support::ctor)]
         fn #register_fn() {
-            ::pasaka::register_passage(stringify! (#name), #name);
+            ::pasaka::register_passage(#name);
         }
     };
     expanded.into()

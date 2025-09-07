@@ -1,9 +1,10 @@
 use pasaka::{
     PassageImpl,
     choice::{PassageHandle, PassageResult},
+    passage,
     runner::web::{WebRunner, WebRunnerProps},
+    yew,
 };
-use pasaka_macro::passage;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

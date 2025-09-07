@@ -76,3 +76,18 @@ pub fn register_passage<P: PassageImpl + Send + Sync>(name: &'static str, passag
         .expect("registering passage registry should not panic")
         .insert(name.to_string(), passage_to_fn(passage));
 }
+
+pub use pasaka_macro::passage;
+
+pub mod ctor {
+    pub use ctor::*;
+}
+
+pub mod serde {
+    pub use serde::*;
+}
+
+#[cfg(feature = "web")]
+pub mod yew {
+    pub use yew::*;
+}

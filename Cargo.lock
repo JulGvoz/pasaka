@@ -147,10 +147,8 @@ checksum = "f678cf4a922c215c63e0de95eb1ff08a958a81d47e485cf9da1e27bf6305cfa5"
 name = "dungeon"
 version = "0.1.0"
 dependencies = [
- "ctor",
  "fastrand",
  "pasaka",
- "pasaka_macro",
  "serde",
 ]
 
@@ -684,11 +682,8 @@ checksum = "9229cfe53dfd69f0609a49f65461bd93001ea1ef889cd5529dd176593f5338a1"
 name = "hello-web"
 version = "0.1.0"
 dependencies = [
- "ctor",
  "pasaka",
- "pasaka_macro",
  "serde",
- "yew",
 ]
 
 [[package]]
@@ -853,6 +848,7 @@ dependencies = [
  "erased-serde",
  "futures",
  "gloo-storage 0.3.0",
+ "pasaka_macro",
  "replace_with",
  "serde",
  "serde_json",
@@ -865,7 +861,6 @@ version = "0.1.0"
 dependencies = [
  "ctor",
  "inventory",
- "pasaka",
  "quote",
  "serde",
  "syn 2.0.106",

@@ -12,8 +12,7 @@ fn main() {
 }
 
 mod combat {
-    use pasaka::{Passage, choice::*};
-    use pasaka_macro::passage;
+    use pasaka::{Passage, choice::*, passage};
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Serialize, Deserialize)]
@@ -84,8 +83,7 @@ mod combat {
 mod game {
     use super::combat::*;
 
-    use pasaka::choice::*;
-    use pasaka_macro::passage;
+    use pasaka::{choice::*, passage};
 
     #[derive(Debug, serde::Serialize, serde::Deserialize)]
     pub struct GameState {
@@ -125,5 +123,3 @@ mod game {
         h.choice().build(state)
     }
 }
-
-pub use pasaka_macro::*;

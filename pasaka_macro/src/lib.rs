@@ -25,7 +25,7 @@ pub fn passage(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let register_fn = format_ident!("__register_passage_{}", name);
 
     let expanded = quote! {
-        #[derive(::std::fmt::Debug, ::std::marker::Copy, ::std::clone::Clone, ::serde::Serialize, ::serde::Deserialize)]
+        #[derive(::std::fmt::Debug, ::std::marker::Copy, ::std::clone::Clone, ::pasaka::serde::Serialize, ::pasaka::serde::Deserialize)]
         #vis struct #name;
 
         impl ::pasaka::PassageImpl for self::#name {
@@ -45,7 +45,7 @@ pub fn passage(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
         #[allow(non_snake_case)]
-        #[ctor::ctor]
+        #[::pasaka::ctor::ctor(crate_path=::pasaka::ctor)]
         fn #register_fn() {
             ::pasaka::register_passage(stringify! (#name), #name);
         }

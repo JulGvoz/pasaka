@@ -5,7 +5,5 @@ edition = "2024"
 
 [dependencies]
 pasaka = { path = "../../pasaka" }
-pasaka_macro = { path = "../../pasaka_macro" }
 fastrand = "2.3.0"
-serde = "1.0.219"
-ctor = "0.5.0"
+serde = { version = "1.0.219", features = ["derive"] }

@@ -1,14 +1,12 @@
-use pasaka::{PassageImpl, engine::Engine, runner::cli::CliRunner};
+use pasaka::{PassageImpl, runner::cli::CliRunner};
 
 use crate::game::{Caverns, GameState};
 
 fn main() {
-    let engine = Engine::new(Caverns.with_state(GameState {
+    CliRunner::run(Caverns.with_state(GameState {
         gold: 0,
         monster: true,
-    }));
-
-    CliRunner::new(engine).run();
+    }))
 }
 
 mod combat {

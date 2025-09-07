@@ -85,6 +85,7 @@ impl EngineState {
 }
 
 impl Engine {
+    /// Create a new [Engine] with the given [Passage].
     pub fn new(passage: Passage) -> Self {
         let entry = StateEntry {
             prev_text: Vec::new(),

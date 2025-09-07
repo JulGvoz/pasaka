@@ -2,6 +2,10 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{ItemFn, PatType, Type, parse_macro_input};
 
+/// Mark function as a passage.
+///
+/// Adds the passage to the global passage registry,
+/// so that it can be (de-)serialized when running the game.
 #[proc_macro_attribute]
 pub fn passage(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as ItemFn);

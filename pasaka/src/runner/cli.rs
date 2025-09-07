@@ -4,6 +4,7 @@ use console::Term;
 use dialoguer::{Confirm, Input, Select, theme::ColorfulTheme};
 
 use crate::{
+    Passage,
     choice::PassageResult,
     engine::{Engine, EngineState},
 };
@@ -13,11 +14,17 @@ pub struct CliRunner {
 }
 
 impl CliRunner {
+    pub fn run(passage: Passage) {
+        let engine = Engine::new(passage);
+        let mut runner = Self::new(engine);
+        runner.start();
+    }
+
     pub fn new(engine: Engine) -> Self {
         Self { engine }
     }
 
-    pub fn run(&mut self) {
+    pub fn start(&mut self) {
         loop {
             Term::stdout().clear_screen().unwrap();
 

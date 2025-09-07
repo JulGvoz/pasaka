@@ -2,8 +2,7 @@ use pasaka::{
     PassageImpl,
     choice::{PassageHandle, PassageResult},
     passage,
-    runner::web::{WebRunner, WebRunnerProps},
-    yew,
+    runner::web::WebRunner,
 };
 use serde::{Deserialize, Serialize};
 
@@ -29,7 +28,5 @@ pub fn StartPoint(mut h: PassageHandle, state: GameState) -> PassageResult {
 }
 
 fn main() {
-    let passage = StartPoint.with_state(GameState { count: 0 });
-    let prop: WebRunnerProps = WebRunnerProps::new(passage);
-    yew::Renderer::<WebRunner>::with_props(prop).render();
+    WebRunner::run(StartPoint.with_state(GameState { count: 0 }));
 }

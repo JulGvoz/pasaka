@@ -3,11 +3,15 @@ use std::{
     sync::{LazyLock, Mutex},
 };
 
-use crate::choice::{PassageHandle, PassageResult};
-
 pub mod choice;
+pub use choice::PassageHandle;
+pub use choice::PassageResult;
+
 pub mod engine;
+pub use engine::Engine;
+
 pub mod runner;
+pub use runner::*;
 
 pub trait PassageImpl: 'static
 where
@@ -27,6 +31,9 @@ where
     fn name(&self) -> &'static str;
 }
 
+/// Combination of a passage name together with its state.
+///
+/// [Passage] can be used to provide a "callback".
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, PartialEq)]
 pub struct Passage {
     state: serde_json::Value,
@@ -51,6 +58,9 @@ type BoxedPassage = Box<dyn Fn(PassageHandle, serde_json::Value) -> PassageResul
 static PASSAGE_REGISTRY: LazyLock<Mutex<HashMap<String, BoxedPassage>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
+/// Register passage to the global registry.
+/// You should not call this function,
+/// as the [`#[passage]`](passage) macro calls it for you.
 pub fn register_passage<P: PassageImpl + Send + Sync>(name: &'static str, passage: P) {
     PASSAGE_REGISTRY
         .lock()
@@ -67,14 +77,17 @@ pub fn register_passage<P: PassageImpl + Send + Sync>(name: &'static str, passag
 
 pub use pasaka_macro::passage;
 
+/// Re-export for use inside of the [`#[passage]`](passage) macro.
 pub mod ctor {
     pub use ctor::*;
 }
 
+/// Re-export for use inside of the [`#[passage]`](passage) macro.
 pub mod serde {
     pub use serde::*;
 }
 
+/// Re-export for use inside of the [`#[passage]`](passage) macro.
 #[cfg(feature = "web")]
 pub mod yew {
     pub use yew::*;

@@ -7,6 +7,13 @@ pub struct WebRunner {
     engine: Engine,
 }
 
+impl WebRunner {
+    pub fn run(passage: Passage) {
+        let prop: WebRunnerProps = WebRunnerProps::new(passage);
+        yew::Renderer::<WebRunner>::with_props(prop).render();
+    }
+}
+
 #[derive(Properties, PartialEq)]
 pub struct WebRunnerProps {
     start_passage: Passage,

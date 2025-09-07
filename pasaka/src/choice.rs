@@ -6,6 +6,7 @@ pub struct PassageResult {
     pub action: Box<dyn FnOnce(usize) -> ChoiceResult>,
 }
 
+/// Handle provided to passages as first argument.
 pub struct PassageHandle {
     pub(crate) text_buffer: Vec<String>,
 }
@@ -26,7 +27,7 @@ impl PassageHandle {
 
 pub(crate) struct ChoiceOption<S> {
     label: String,
-    on_choose: Box<dyn FnOnce(S, ChoiceHandle) -> ChoiceResult>,
+    on_choose: Box<dyn FnOnce(ChoiceHandle, S) -> ChoiceResult>,
 }
 
 pub struct ChoiceBuilder<S: 'static> {
@@ -38,7 +39,7 @@ impl<S> ChoiceBuilder<S> {
     pub fn option(
         mut self,
         label: impl ToString,
-        f: impl FnOnce(S, ChoiceHandle) -> ChoiceResult + 'static,
+        f: impl FnOnce(ChoiceHandle, S) -> ChoiceResult + 'static,
     ) -> Self {
         let option = ChoiceOption {
             label: label.to_string(),
@@ -67,7 +68,7 @@ impl<S> ChoiceBuilder<S> {
                 .nth(index)
                 .expect("selected option should be within bounds of possible options");
 
-            (option.on_choose)(state, handle)
+            (option.on_choose)(handle, state)
         });
 
         PassageResult {

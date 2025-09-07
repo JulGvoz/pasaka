@@ -1,10 +1,5 @@
-use pasaka::{
-    PassageImpl,
-    choice::{PassageHandle, PassageResult},
-    passage,
-    runner::web::WebRunner,
-};
-use serde::{Deserialize, Serialize};
+use ::serde::{Deserialize, Serialize};
+use pasaka::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameState {
@@ -16,11 +11,11 @@ pub fn StartPoint(mut h: PassageHandle, state: GameState) -> PassageResult {
     h.text(format!("Current count: {}", state.count));
 
     h.choice()
-        .option("Increase", |mut state: GameState, h| {
+        .option("Increase", |h, mut state: GameState| {
             state.count += 1;
             h.passage(StartPoint, state)
         })
-        .option("Decrease", |mut state, h| {
+        .option("Decrease", |h, mut state| {
             state.count -= 1;
             h.passage(StartPoint, state)
         })

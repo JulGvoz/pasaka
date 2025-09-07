@@ -134,3 +134,15 @@ impl Engine {
         self.current = self.state.evaluate();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+
+    #[passage]
+    fn Counter(h: PassageHandle, count: usize) -> PassageResult {
+        h.choice()
+            .option("", |h, count| h.passage(Counter, count + 1))
+            .build(count)
+    }
+}

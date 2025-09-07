@@ -1,4 +1,4 @@
-use pasaka::{PassageImpl, runner::cli::CliRunner};
+use pasaka::*;
 
 use crate::game::{Caverns, GameState};
 
@@ -10,8 +10,8 @@ fn main() {
 }
 
 mod combat {
-    use pasaka::{Passage, choice::*, passage};
-    use serde::{Deserialize, Serialize};
+    use ::serde::{Deserialize, Serialize};
+    use pasaka::*;
 
     #[derive(Debug, Serialize, Deserialize)]
     pub struct CombatState {
@@ -40,7 +40,7 @@ mod combat {
         h.text(format!("It is attacking for {damage} damage!"));
 
         h.choice()
-            .option("Attack it", move |mut state: CombatState, mut h| {
+            .option("Attack it", move |mut h, mut state: CombatState| {
                 state.enemy_hp -= 10;
                 h.text("You deal 10 damage to the monster.");
                 if state.enemy_hp <= 0 {
@@ -56,7 +56,7 @@ mod combat {
                     }
                 }
             })
-            .option("Defend against its attack", move |mut state, mut h| {
+            .option("Defend against its attack", move |mut h, mut state| {
                 let original_damage = damage;
                 let damage = 0.max(damage - 3);
                 state.player_hp -= damage;
@@ -81,9 +81,10 @@ mod combat {
 mod game {
     use super::combat::*;
 
-    use pasaka::{choice::*, passage};
+    use ::serde::{Deserialize, Serialize};
+    use pasaka::*;
 
-    #[derive(Debug, serde::Serialize, serde::Deserialize)]
+    #[derive(Debug, Serialize, Deserialize)]
     pub struct GameState {
         pub gold: i32,
         pub monster: bool,
@@ -96,12 +97,12 @@ mod game {
             h.text("You see a path forwards, but it blocked by a monster");
 
             h.choice()
-                .option("Engage the monster", |state, h| {
+                .option("Engage the monster", |h, state| {
                     let combat_state = CombatState::new(20, 100, Path.with_state(state));
 
                     h.passage(Combat, combat_state)
                 })
-                .option("Explore more", |state, mut h| {
+                .option("Explore more", |mut h, state| {
                     h.text("You explore the dungeon more, but don't find anything interesting.");
                     h.passage(Caverns, state)
                 })

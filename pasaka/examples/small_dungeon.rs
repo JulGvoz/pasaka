@@ -12,8 +12,8 @@ fn MainHall(mut h: PassageHandle, state: State) -> PassageResult {
     h.text(format!("You have {} gold.", state.gold));
 
     h.choice()
-        .option("Go left", |state, h| h.passage(Left, state))
-        .option("Go right", |_, h| h.passage(Right, ()))
+        .option("Go left", |h, state| h.passage(Left, state))
+        .option("Go right", |h, _| h.passage(Right, ()))
         .build(state)
 }
 
@@ -28,7 +28,7 @@ fn Left(mut h: PassageHandle, mut state: State) -> PassageResult {
     }
 
     h.choice()
-        .option("Return", |state, h| h.passage(MainHall, state))
+        .option("Return", |h, state| h.passage(MainHall, state))
         .build(state)
 }
 

@@ -6,6 +6,7 @@ description = "Interactive fiction game engine"
 keywords = ["web", "gamedev", "game", "engine"]
 license = "UNLICENSED"
 categories = ["web-programming", "game-engines"]
+repository = "https://github.com/JulGvoz/pasaka"
 
 [features]
 web = ["dep:gloo-storage", "dep:yew"]

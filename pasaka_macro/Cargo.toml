@@ -5,6 +5,7 @@ edition = "2024"
 description = "#[passage] macro for pasaka"
 keywords = ["macro"]
 license = "UNLICENSED"
+repository = "https://github.com/JulGvoz/pasaka"
 
 [lib]
 proc-macro = true

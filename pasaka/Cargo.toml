@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 description = "Interactive fiction game engine"
 keywords = ["web", "gamedev", "game", "engine"]
-license = "UNLICENSED"
+license-file = "LICENSE.txt"
 categories = ["web-programming", "game-engines"]
 repository = "https://github.com/JulGvoz/pasaka"
 

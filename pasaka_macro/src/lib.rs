@@ -35,10 +35,6 @@ pub fn passage(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 #block
             }
 
-            fn box_clone(&self) -> ::std::boxed::Box<dyn ::pasaka::PassageImpl<State = Self::State>> {
-                ::std::boxed::Box::new(::std::clone::Clone::clone(self))
-            }
-
             fn name(&self) -> &'static str {
                 stringify! (#name)
             }

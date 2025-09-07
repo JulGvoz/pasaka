@@ -24,26 +24,7 @@ where
         }
     }
 
-    #[deprecated]
-    fn box_clone(&self) -> Box<dyn PassageImpl<State = Self::State>>;
-
     fn name(&self) -> &'static str;
-
-    fn as_fn(&'_ self) -> Box<dyn Fn(PassageHandle, serde_json::Value) -> PassageResult + '_> {
-        Box::new(|h, value| {
-            let s: Self::State = serde_json::from_value(value)
-                .expect("deserialized value should match passage state");
-            self.run(h, s)
-        })
-    }
-}
-
-fn passage_to_fn<P: PassageImpl + Send + Sync>(p: P) -> BoxedPassage {
-    Box::new(move |h, value| {
-        let s: P::State =
-            serde_json::from_value(value).expect("deserialized value should match passage state");
-        p.run(h, s)
-    })
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone, PartialEq)]
@@ -74,7 +55,14 @@ pub fn register_passage<P: PassageImpl + Send + Sync>(name: &'static str, passag
     PASSAGE_REGISTRY
         .lock()
         .expect("registering passage registry should not panic")
-        .insert(name.to_string(), passage_to_fn(passage));
+        .insert(
+            name.to_string(),
+            Box::new(move |h, value| {
+                let state: P::State = serde_json::from_value(value)
+                    .expect("deserialized value should match passage state");
+                passage.run(h, state)
+            }),
+        );
 }
 
 pub use pasaka_macro::passage;

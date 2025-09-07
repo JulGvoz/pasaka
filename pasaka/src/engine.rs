@@ -47,7 +47,7 @@ impl EngineState {
             prev_text: choice.handle.text_buffer,
             passage: choice.next_passage,
         };
-        self.history_index = self.history.len();
+        self.history_index += 1;
         self.history.push_back(entry);
 
         while self.history.len() > limit {
@@ -59,10 +59,20 @@ impl EngineState {
     }
 
     #[must_use]
+    pub fn can_undo(&self) -> bool {
+        self.history.len() > 1 && self.history_index > 0
+    }
+
+    #[must_use]
     pub fn undo(&mut self) -> PassageResult {
         self.history_index = self.history_index.saturating_sub(1);
 
         self.evaluate()
+    }
+
+    #[must_use]
+    pub fn can_redo(&self) -> bool {
+        self.history.len() > 1 && self.history_index + 1 < self.history.len()
     }
 
     #[must_use]

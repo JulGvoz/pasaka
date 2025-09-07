@@ -112,9 +112,9 @@ impl Component for WebRunner {
             <p><a href="javascript:void(0)" onclick={save}>{"Save"}</a></p>
             <p><a href="javascript:void(0)" onclick={load}>{"Load"}</a></p>
             <p>
-                <a href="javascript:void(0)" onclick={undo}>{"Undo"}</a>
+                <a href="javascript:void(0)" onclick={undo} disabled={!self.engine.state().can_undo()}>{"Undo"}</a>
                 {"|"}
-                <a href="javascript:void(0)" onclick={redo}>{"Redo"}</a>
+                <a href="javascript:void(0)" onclick={redo} disabled={!self.engine.state().can_redo()}>{"Redo"}</a>
             </p>
             </>
         }

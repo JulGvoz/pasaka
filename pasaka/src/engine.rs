@@ -25,6 +25,8 @@ struct StateEntry {
     passage: Passage,
 }
 
+const ENGINE_HISTORY_LIMIT: usize = 40;
+
 impl EngineState {
     #[must_use]
     #[cfg(test)]
@@ -56,7 +58,7 @@ impl EngineState {
         self.history_index += 1;
         self.history.push_back(entry);
 
-        while self.history.len() > limit {
+        while self.history.len() > limit + 1 {
             self.history.pop_front();
             self.history_index -= 1;
         }
@@ -105,7 +107,7 @@ impl Engine {
         Engine {
             state,
             current,
-            history_limit: 40,
+            history_limit: ENGINE_HISTORY_LIMIT,
         }
     }
 
@@ -116,11 +118,19 @@ impl Engine {
     pub fn update(&mut self, choice_index: usize) {
         assert!(choice_index < self.current.labels.len());
 
-        replace_with::replace_with_or_abort(&mut self.current, |current| {
-            let choice = (current.action)(choice_index);
+        replace_with::replace_with(
+            &mut self.current,
+            || PassageResult {
+                text: vec!["An error has occured".to_string()],
+                labels: vec![],
+                action: Box::new(|_| todo!()),
+            },
+            |current| {
+                let choice = (current.action)(choice_index);
 
-            self.state.push(choice, self.history_limit)
-        });
+                self.state.push(choice, self.history_limit)
+            },
+        );
     }
 
     pub fn undo(&mut self) {
@@ -143,7 +153,7 @@ impl Engine {
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    use crate::{engine::ENGINE_HISTORY_LIMIT, *};
 
     #[passage]
     fn Counter(h: PassageHandle, count: usize) -> PassageResult {
@@ -214,5 +224,20 @@ mod tests {
         engine.redo();
         let state: usize = engine.state.current_entry().passage.state().unwrap();
         assert_eq!(state, 3);
+    }
+
+    #[test]
+    fn undo_limit() {
+        let mut engine = Engine::new(Counter.with_state(0));
+
+        for _ in 0..200 {
+            engine.update(0);
+        }
+        for _ in 0..200 {
+            engine.undo();
+        }
+
+        let state: usize = engine.state.current_entry().passage.state().unwrap();
+        assert_eq!(state, 200 - ENGINE_HISTORY_LIMIT);
     }
 }

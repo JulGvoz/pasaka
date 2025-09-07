@@ -1,3 +1,5 @@
 target/
 *.json
 dist/
+mutants.out/
+mutants.out.old/

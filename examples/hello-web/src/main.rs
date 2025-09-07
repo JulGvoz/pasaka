@@ -19,9 +19,10 @@ pub fn StartPoint(mut h: PassageHandle, state: GameState) -> PassageResult {
             state.count -= 1;
             h.passage(StartPoint, state)
         })
+        .option("Crash Application", |_, _| panic!("Here's a crash"))
         .build(state)
 }
 
 fn main() {
-    WebRunner::run(StartPoint.with_state(GameState { count: 0 }));
+    DefaultRunner::run(StartPoint.with_state(GameState { count: 0 }));
 }
